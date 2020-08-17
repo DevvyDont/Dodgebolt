@@ -1,0 +1,5 @@
+name: Dodgebolt
+version: ${project.version}
+main: me.devvy.dodgebolt.Dodgebolt
+api-version: 1.16
+prefix: Dodgebolt
