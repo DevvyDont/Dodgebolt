@@ -11,6 +11,7 @@ public final class Dodgebolt extends JavaPlugin {
     @Override
     public void onEnable() {
         game = new DodgeboltGame();
+        getServer().getPluginManager().registerEvents(game, this);
     }
 
     @Override

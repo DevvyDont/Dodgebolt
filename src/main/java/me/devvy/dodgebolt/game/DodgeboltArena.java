@@ -26,6 +26,7 @@ public class DodgeboltArena {
 
 
     private final Location origin;
+    private final Location spawn;  // Used for knowing where to spawn spectators and tp ppl that died
     private boolean generated = false;
 
     public static final int X_ARENA_RADIUS = 15;  // From center to side walls
@@ -36,6 +37,7 @@ public class DodgeboltArena {
 
     public DodgeboltArena(Location origin) {
         this.origin = origin;
+        this.spawn = origin.clone().add(0, 12, 0);
     }
 
     public boolean isGenerated() {
@@ -46,7 +48,14 @@ public class DodgeboltArena {
         return origin;
     }
 
+    public Location getSpawn() {
+        return spawn;
+    }
+
     public void generateArena() {
+
+        currentTeamOneColor = Material.BLUE_CARPET;
+        currentTeamTwoColor = Material.ORANGE_CARPET;
 
         Clipboard clipboard;
 
@@ -86,8 +95,10 @@ public class DodgeboltArena {
      * Used to reload the arena back to what it is, used for in between rounds
      */
     public void restoreArena() {
+        Material tempTeamOneColor = currentTeamOneColor;
+        Material tempTeamTwoColor = currentTeamTwoColor;
         generateArena();
-        changeTeamCarpetColors(currentTeamOneColor, currentTeamTwoColor);
+        changeTeamCarpetColors(tempTeamOneColor, tempTeamTwoColor);
     }
 
     public void changeTeamCarpetColors(Material teamOneColor, Material teamTwoColor) {
