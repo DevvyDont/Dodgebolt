@@ -38,6 +38,7 @@ public class DodgeboltArena {
     public DodgeboltArena(Location origin) {
         this.origin = origin;
         this.spawn = origin.clone().add(0, 12, 0);
+        this.spawn.setYaw(90);
     }
 
     public boolean isGenerated() {
@@ -49,7 +50,7 @@ public class DodgeboltArena {
     }
 
     public Location getSpawn() {
-        return spawn;
+        return spawn.clone();
     }
 
     public void generateArena() {

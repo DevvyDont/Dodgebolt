@@ -34,10 +34,10 @@ public class DodgeboltGame implements Listener {
 
         arena.changeTeamCarpetColors(team1.getTeamColor(), team2.getTeamColor());
 
-        new TeamSwitchSign(this, new Location(arenaWorld, 41, 112, 52), BlockFace.EAST, team1);
-        new TeamSwitchSign(this, new Location(arenaWorld, 41, 112, 48),BlockFace.EAST, team2);
-        new SpectatorSwitchSign(this, new Location(arenaWorld, 41, 112, 50), BlockFace.EAST);
-        new StartGameSign(this, new Location(arenaWorld, 41, 113, 50), BlockFace.EAST);
+        new TeamSwitchSign(this, arena.getSpawn().clone().add(-5, 0, 1), BlockFace.EAST, team1);
+        new TeamSwitchSign(this, arena.getSpawn().clone().add(-5, 0, -1),BlockFace.EAST, team2);
+        new SpectatorSwitchSign(this, arena.getSpawn().clone().add( -5, 0, 0), BlockFace.EAST);
+        new StartGameSign(this, arena.getSpawn().clone().add(-5, 1, 0), BlockFace.EAST);
 
         scoreboardManager = new MinecraftScoreboardManager(this);
         Dodgebolt.getPlugin(Dodgebolt.class).getServer().getPluginManager().registerEvents(scoreboardManager, Dodgebolt.getPlugin(Dodgebolt.class));
