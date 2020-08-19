@@ -4,14 +4,12 @@ import me.devvy.dodgebolt.Dodgebolt;
 import me.devvy.dodgebolt.team.Team;
 import me.devvy.dodgebolt.util.Phrases;
 import org.bukkit.*;
+import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
-import org.bukkit.event.player.AsyncPlayerChatEvent;
-import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.event.player.PlayerRespawnEvent;
+import org.bukkit.event.player.*;
 
 public class DodgeboltGame implements Listener {
 
@@ -20,7 +18,7 @@ public class DodgeboltGame implements Listener {
     private final Team team2;
 
     private final MinecraftScoreboardManager scoreboardManager;
-    
+
     public DodgeboltGame() {
         World arenaWorld = Bukkit.getWorld("world");
         if (arenaWorld == null)
@@ -35,6 +33,11 @@ public class DodgeboltGame implements Listener {
         team2 = new Team("Team 2", ChatColor.LIGHT_PURPLE);
 
         arena.changeTeamCarpetColors(team1.getTeamColor(), team2.getTeamColor());
+
+        new TeamSwitchSign(this, new Location(arenaWorld, 41, 112, 52), BlockFace.EAST, team1);
+        new TeamSwitchSign(this, new Location(arenaWorld, 41, 112, 48),BlockFace.EAST, team2);
+        new SpectatorSwitchSign(this, new Location(arenaWorld, 41, 112, 50), BlockFace.EAST);
+        new StartGameSign(this, new Location(arenaWorld, 41, 113, 50), BlockFace.EAST);
 
         scoreboardManager = new MinecraftScoreboardManager(this);
         Dodgebolt.getPlugin(Dodgebolt.class).getServer().getPluginManager().registerEvents(scoreboardManager, Dodgebolt.getPlugin(Dodgebolt.class));
@@ -68,13 +71,19 @@ public class DodgeboltGame implements Listener {
         team.addPlayer(player);
     }
 
+    public void setSpectating(Player player) {
+        getTeam2().removePlayer(player);
+        getTeam1().removePlayer(player);
+        player.setDisplayName(ChatColor.DARK_GRAY + "[SPEC] " + ChatColor.stripColor(player.getName()));
+    }
+
     public void cleanup() {
         arena.destroyArena();
     }
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
-        event.getPlayer().setDisplayName(ChatColor.DARK_GRAY + "[SPEC] " + ChatColor.stripColor(event.getPlayer().getName()));
+        setSpectating(event.getPlayer());
         event.getPlayer().teleport(arena.getSpawn());
     }
 
@@ -102,12 +111,18 @@ public class DodgeboltGame implements Listener {
         }
 
         Player killer = event.getEntity().getKiller();
-        event.setDeathMessage(killer != null ? Phrases.getRandomKilledPhrase(event.getEntity(), killer) : Phrases.getRandomSuicidePhrase(event.getEntity()));
+        event.setDeathMessage(ChatColor.GRAY + "[" + ChatColor.RED + "✘" + ChatColor.GRAY + "] " + (killer != null ? Phrases.getRandomKilledPhrase(event.getEntity(), killer) : Phrases.getRandomSuicidePhrase(event.getEntity())));
     }
 
     @EventHandler
     public void onPlayerChat(AsyncPlayerChatEvent event) {
         event.setFormat("%s " + ChatColor.WHITE + ">> " + ChatColor.GRAY + "%s");
+    }
+
+    @EventHandler
+    public void onPlayerFellInVoid(PlayerMoveEvent event) {
+        if (event.getTo().getY() < 0)
+            event.getPlayer().teleport(arena.getSpawn());
     }
 
 

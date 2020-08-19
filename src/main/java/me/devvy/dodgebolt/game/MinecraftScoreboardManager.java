@@ -11,6 +11,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scoreboard.Scoreboard;
 
 public class MinecraftScoreboardManager implements Listener {
@@ -28,28 +29,42 @@ public class MinecraftScoreboardManager implements Listener {
 
         scoreboard = Bukkit.getScoreboardManager().getNewScoreboard();
         team1ScoreboardTeam = scoreboard.registerNewTeam("one");
-        team1ScoreboardTeam.setPrefix(ChatColor.BLUE.toString());
         team2ScoreboardTeam = scoreboard.registerNewTeam("two");
-        team1ScoreboardTeam.setPrefix(ChatColor.GOLD.toString());
         spectatorScoreboardTeam = scoreboard.registerNewTeam("spec");
-        spectatorScoreboardTeam.setPrefix(ChatColor.GRAY + "[SPEC] ");
 
-        team1ScoreboardTeam.setColor(game.getTeam1().getTeamColor());
-        team1ScoreboardTeam.setColor(game.getTeam2().getTeamColor());
+        spectatorScoreboardTeam.setPrefix(ChatColor.GRAY + "[SPEC] ");
 
         for (Player player : Bukkit.getOnlinePlayers()) {
             player.setScoreboard(scoreboard);
             spectatorScoreboardTeam.addEntry(player.getName());
         }
+
+        delayedUpdate();
+    }
+
+    private void delayedUpdate() {
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                team1ScoreboardTeam.setPrefix(game.getTeam1().getTeamColor() + game.getTeam1().getName() + " ");
+                team2ScoreboardTeam.setPrefix(game.getTeam2().getTeamColor() + game.getTeam2().getName() + " ");
+                team1ScoreboardTeam.setColor(game.getTeam1().getTeamColor());
+                team2ScoreboardTeam.setColor(game.getTeam2().getTeamColor());
+            }
+        }.runTaskLater(Dodgebolt.getPlugin(Dodgebolt.class), 20);
     }
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         event.getPlayer().setScoreboard(scoreboard);
+        team1ScoreboardTeam.removeEntry(event.getPlayer().getName());
+        team2ScoreboardTeam.removeEntry(event.getPlayer().getName());
+        spectatorScoreboardTeam.addEntry(event.getPlayer().getName());
     }
 
     @EventHandler
     public void onPlayerLeaveTeam(PlayerLeaveTeamEvent event) {
+
         team1ScoreboardTeam.removeEntry(event.getPlayer().getName());
         team2ScoreboardTeam.removeEntry(event.getPlayer().getName());
         spectatorScoreboardTeam.addEntry(event.getPlayer().getName());
@@ -57,6 +72,7 @@ public class MinecraftScoreboardManager implements Listener {
 
     @EventHandler
     public void onPlayerJoinTeam(PlayerJoinTeamEvent event) {
+
         spectatorScoreboardTeam.removeEntry(event.getPlayer().getName());
         if (event.getTeam() == game.getTeam1())
             team1ScoreboardTeam.addEntry(event.getPlayer().getName());
@@ -69,7 +85,7 @@ public class MinecraftScoreboardManager implements Listener {
 
         org.bukkit.scoreboard.Team scoreboardTeam = event.getTeam() == game.getTeam1() ? team1ScoreboardTeam : team2ScoreboardTeam;
 
-        scoreboardTeam.setPrefix(event.getNew().toString());
         scoreboardTeam.setColor(event.getNew());
+        scoreboardTeam.setPrefix(event.getNew().toString() +  event.getTeam().getName() + event.getNew().toString() + " ");
     }
 }
