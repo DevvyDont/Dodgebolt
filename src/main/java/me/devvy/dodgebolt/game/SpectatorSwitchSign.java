@@ -28,7 +28,7 @@ public class SpectatorSwitchSign extends InteractableSign implements Listener {
         int spectatingAmount = Bukkit.getOnlinePlayers().size() - actualPlaying;
 
         setLine(1, ChatColor.AQUA.toString() + spectatingAmount + ChatColor.DARK_GRAY +" watching!");
-        setLine(3, "Punch to spectate!");
+        setLine(3, "Punch to watch!");
         updateSign();
     }
 

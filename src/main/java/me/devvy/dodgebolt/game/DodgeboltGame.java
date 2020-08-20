@@ -10,6 +10,7 @@ import me.devvy.dodgebolt.team.Team;
 import me.devvy.dodgebolt.util.Fireworks;
 import me.devvy.dodgebolt.util.Items;
 import me.devvy.dodgebolt.util.Phrases;
+import me.devvy.dodgebolt.util.PlayerStats;
 import org.bukkit.*;
 import org.bukkit.block.BlockFace;
 import org.bukkit.enchantments.Enchantment;
@@ -29,6 +30,7 @@ import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
+import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.*;
 
@@ -43,6 +45,8 @@ public class DodgeboltGame implements Listener {
     private DodgeboltArrowSpawners arrowSpawners;
 
     private final MinecraftScoreboardManager scoreboardManager;
+
+    private int roundsToWin = 5;
 
     public DodgeboltGame() {
         World arenaWorld = Bukkit.getWorld("world");
@@ -79,6 +83,14 @@ public class DodgeboltGame implements Listener {
             player.teleport(arena.getSpawn());
             player.setGameMode(GameMode.SURVIVAL);
         }
+    }
+
+    public int getRoundsToWin() {
+        return roundsToWin;
+    }
+
+    public void setRoundsToWin(int roundsToWin) {
+        this.roundsToWin = roundsToWin;
     }
 
     public DodgeboltArena getArena() {
@@ -185,6 +197,9 @@ public class DodgeboltGame implements Listener {
             if (entity instanceof Item || entity instanceof Arrow)
                 entity.remove();
 
+        float gamePercent = (team1.getScore() + team2.getScore() + 1f) / (roundsToWin * 2f - 1f);
+        int newTick = (int) (14000 * gamePercent);
+        arena.getOrigin().getWorld().setTime(newTick);
 
         // Fix the arena
         arena.restoreArena();
@@ -228,20 +243,23 @@ public class DodgeboltGame implements Listener {
         setState(DodgeboltGameState.INGAME);
 
         arena.disableBarriers();
+
         for (Player player : Bukkit.getOnlinePlayers()) {
             player.playSound(player.getLocation(), Sound.BLOCK_ANVIL_DESTROY, 1, 1.5f);
             player.sendTitle("", ChatColor.RED + "Eliminate" + ChatColor.GRAY + " the other team!", 1, 30, 5);
+
+            if (team1.getElimTracker().getTeamMembersAlive() == 1 && team2.getElimTracker().getTeamMembersAlive() == 1)
+                player.playSound(player.getEyeLocation().add(0, 60, 0), Sound.MUSIC_DISC_PIGSTEP, 5.5f, 1);
 
             player.setFireTicks(0);
         }
 
         arrowSpawners = new DodgeboltArrowSpawners(this, Arrays.asList(arena.getArrowSpawnLocations()));
+
     }
 
     public void exitGameRoundPhase(Team winner) {
         currentPhaseTask.cancel();
-        currentPhaseTask = new DodgeboltIntermissionPhaseTask(this);
-        currentPhaseTask.runTaskTimer(Dodgebolt.getPlugin(Dodgebolt.class), 1, DodgeboltIntermissionPhaseTask.PERIOD);
 
         setState(DodgeboltGameState.INTERMISSION);
         winner.setScore(winner.getScore() + 1);
@@ -249,6 +267,7 @@ public class DodgeboltGame implements Listener {
         for (Player player : winner.getMembersAsPlayers()) {
             player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, .75f, 1);
             Fireworks.spawnVictoryFireworks(player, Fireworks.translateChatColorToColor(winner.getTeamColor()));
+            PlayerStats.addPlayerRoundWins(player);
         }
 
         for (Player player : getOpposingTeam(winner).getMembersAsPlayers())
@@ -269,10 +288,18 @@ public class DodgeboltGame implements Listener {
             player.setGlowing(false);
             player.setInvulnerable(true);
             player.setAllowFlight(true);
+            player.stopSound(Sound.MUSIC_DISC_PIGSTEP);
         }
 
         arrowSpawners.delete();
         arrowSpawners = null;
+
+        if (team1.getScore() >= roundsToWin || team2.getScore() >= roundsToWin) {
+            endGame();
+        } else {
+            currentPhaseTask = new DodgeboltIntermissionPhaseTask(this);
+            currentPhaseTask.runTaskTimer(Dodgebolt.getPlugin(Dodgebolt.class), 1, DodgeboltIntermissionPhaseTask.PERIOD);
+        }
     }
 
     public void exitIntermissionPhase() {
@@ -283,12 +310,74 @@ public class DodgeboltGame implements Listener {
 
     public void endGame() {
 
+        for (Player p : Bukkit.getOnlinePlayers())
+            p.getInventory().clear();
+
+        if (team1.getScore() == team2.getScore()) {
+
+            for (Player player : Bukkit.getOnlinePlayers()) {
+                player.sendTitle(ChatColor.GRAY + "DRAW!", ChatColor.WHITE + "Nobody wins today :/", 10, 80, 40);
+                player.playSound(player.getEyeLocation(), Sound.BLOCK_BEACON_DEACTIVATE, 1, .5f);
+            }
+
+
+        } else {
+
+            Team winner = team1.getScore() > team2.getScore() ? team1 : team2;
+            for (Player winningPlayer : winner.getMembersAsPlayers()) {
+                winningPlayer.playSound(winningPlayer.getEyeLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, .75f, 1);
+                winningPlayer.sendTitle(ChatColor.GREEN + "VICTORY", winner.getTeamColor() + winner.getName() + ChatColor.GRAY + " won the game!", 10, 80, 40);
+                PlayerStats.addPlayerWins(winningPlayer);
+                Items.equipWinnerCrown(winningPlayer);
+            }
+
+            for (Player losingPlayer : getOpposingTeam(winner).getMembersAsPlayers()) {
+                losingPlayer.playSound(losingPlayer.getEyeLocation(), Sound.ENTITY_WITHER_DEATH, .8f, 1);
+                losingPlayer.sendTitle(ChatColor.DARK_RED + "DEFEAT", winner.getTeamColor() + winner.getName() + ChatColor.GRAY + " won the game!", 10, 80, 40);
+            }
+
+            for (Player spectator : Bukkit.getOnlinePlayers()) {
+                if (getPlayerTeam(spectator) != null)
+                    continue;
+
+                spectator.playSound(spectator.getEyeLocation(), Sound.ENTITY_ENDER_DRAGON_DEATH, .5f, 1);
+                spectator.sendTitle(ChatColor.AQUA + "GAME OVER", winner.getTeamColor() + winner.getName() + ChatColor.GRAY + " won the game!", 10, 80, 40);
+            }
+
+        }
+
         for (Player player : Bukkit.getOnlinePlayers()) {
             player.setGameMode(GameMode.SURVIVAL);
             player.setInvulnerable(true);
             player.setAllowFlight(true);
         }
 
+        for (Entity entity : arena.getOrigin().getWorld().getEntities())
+            if (entity instanceof Item || entity instanceof Arrow)
+                entity.remove();
+
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+
+                for (Player player : Bukkit.getOnlinePlayers()) {
+
+                    if (player.isDead())
+                        player.spigot().respawn();
+
+                    setSpectating(player);
+                    player.teleport(arena.getSpawn().clone().add(Math.random() - .5, 0, Math.random() - .5));
+
+                    Team winner = team1.getScore() > team2.getScore() ? team1 : team2;
+                }
+
+                team1.setScore(0);
+                team2.setScore(0);
+                arena.restoreArena();
+                setState(DodgeboltGameState.WAITING);
+
+            }
+        }.runTaskLater(Dodgebolt.getPlugin(Dodgebolt.class), 120);
     }
 
     public void cleanup() {
@@ -363,8 +452,13 @@ public class DodgeboltGame implements Listener {
             return;
 
         Player killer = player.getKiller();
+        if (killer != null)
+            PlayerStats.addPlayerKills(killer);
 
         for (Player otherPlayers : Bukkit.getOnlinePlayers()) {
+
+            if (team1.getElimTracker().getTeamMembersAlive() == 1 && team2.getElimTracker().getTeamMembersAlive() == 1)
+                otherPlayers.playSound(otherPlayers.getEyeLocation().add(0, 60, 0), Sound.MUSIC_DISC_PIGSTEP, 5.2f, 1);
 
             if (otherPlayers == killer)
                 otherPlayers.sendTitle(ChatColor.GRAY + "[" + ChatColor.RED + "✘" + ChatColor.GRAY + "] " + player.getDisplayName(), getBothTeamAliveCountString(), 5, 15, 5);

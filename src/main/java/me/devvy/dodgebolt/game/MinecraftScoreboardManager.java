@@ -1,9 +1,12 @@
 package me.devvy.dodgebolt.game;
 
+import com.google.common.base.Strings;
+import com.sk89q.util.StringUtil;
 import me.devvy.dodgebolt.Dodgebolt;
 import me.devvy.dodgebolt.events.PlayerJoinTeamEvent;
 import me.devvy.dodgebolt.events.PlayerLeaveTeamEvent;
 import me.devvy.dodgebolt.events.TeamColorChangeEvent;
+import org.apache.commons.lang.StringUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
@@ -12,7 +15,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.scoreboard.Scoreboard;
+import org.bukkit.scoreboard.*;
 
 public class MinecraftScoreboardManager implements Listener {
 
@@ -23,6 +26,16 @@ public class MinecraftScoreboardManager implements Listener {
     org.bukkit.scoreboard.Team team1ScoreboardTeam;
     org.bukkit.scoreboard.Team team2ScoreboardTeam;
     org.bukkit.scoreboard.Team spectatorScoreboardTeam;
+
+    org.bukkit.scoreboard.Team sidebarLineCurrRound;
+    Score blankLine;
+    org.bukkit.scoreboard.Team sidebarLineTeam1ScoreLabel;
+    org.bukkit.scoreboard.Team sidebarLineTeam1Score;
+    Score blankLine2;
+    org.bukkit.scoreboard.Team sidebarLineTeam2ScoreLabel;
+    org.bukkit.scoreboard.Team sidebarLineTeam2Score;
+
+    Objective sidebar;
 
     public MinecraftScoreboardManager(DodgeboltGame game) {
         this.game = game;
@@ -37,12 +50,48 @@ public class MinecraftScoreboardManager implements Listener {
 
         spectatorScoreboardTeam.setPrefix(ChatColor.GRAY + "[SPEC] ");
 
+        sidebar = scoreboard.registerNewObjective("dummy", "dummy", ChatColor.AQUA + "Dodgebolt");
+
+        sidebarLineCurrRound = scoreboard.registerNewTeam("CurrRound");
+        sidebarLineCurrRound.addEntry(ChatColor.values()[6].toString());
+        sidebar.getScore(ChatColor.values()[6].toString()).setScore(6);
+
+        blankLine = sidebar.getScore(ChatColor.values()[5].toString());
+        blankLine.setScore(5);
+
+        sidebarLineTeam1ScoreLabel = scoreboard.registerNewTeam("Team1ScoreL");
+        sidebarLineTeam1ScoreLabel.addEntry(ChatColor.values()[4].toString());
+        sidebar.getScore(ChatColor.values()[4].toString()).setScore(4);
+
+        sidebarLineTeam1Score = scoreboard.registerNewTeam("Team1Score");
+        sidebarLineTeam1Score.addEntry(ChatColor.values()[3].toString());
+        sidebar.getScore(ChatColor.values()[3].toString()).setScore(3);
+
+        blankLine2 = sidebar.getScore(ChatColor.values()[2].toString());
+        blankLine2.setScore(2);
+
+        sidebarLineTeam2ScoreLabel = scoreboard.registerNewTeam("Team2ScoreL");
+        sidebarLineTeam2ScoreLabel.addEntry(ChatColor.values()[1].toString());
+        sidebar.getScore(ChatColor.values()[1].toString()).setScore(1);
+
+        sidebarLineTeam2Score = scoreboard.registerNewTeam("Team2Score");
+        sidebarLineTeam2Score.addEntry(ChatColor.values()[0].toString());
+        sidebar.getScore(ChatColor.values()[0].toString()).setScore(0);
+
+
         for (Player player : Bukkit.getOnlinePlayers()) {
             player.setScoreboard(scoreboard);
             spectatorScoreboardTeam.addEntry(player.getName());
         }
 
         delayedUpdate();
+
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                updateSidebar();
+            }
+        }.runTaskTimer(Dodgebolt.getPlugin(Dodgebolt.class), 5, 20);
     }
 
     private void delayedUpdate() {
@@ -53,8 +102,100 @@ public class MinecraftScoreboardManager implements Listener {
                 team2ScoreboardTeam.setPrefix(ChatColor.GRAY + "[" + game.getTeam2().getTeamColor() + game.getTeam2().getName() + ChatColor.GRAY + "] ");
                 team1ScoreboardTeam.setColor(game.getTeam1().getTeamColor());
                 team2ScoreboardTeam.setColor(game.getTeam2().getTeamColor());
+
+                sidebar.setDisplaySlot(DisplaySlot.SIDEBAR);
+
+                updateSidebar();
             }
         }.runTaskLater(Dodgebolt.getPlugin(Dodgebolt.class), 20);
+    }
+
+    public void updateSidebar() {
+        sidebarLineCurrRound.setPrefix(ChatColor.YELLOW + ChatColor.BOLD.toString() + "Current Round: ");
+        sidebarLineCurrRound.setSuffix(ChatColor.WHITE.toString() + (game.getState() == DodgeboltGameState.WAITING ? 0 : (game.getTeam1().getScore() + game.getTeam2().getScore() + 1)) + "/" + (game.getRoundsToWin() * 2 - 1));
+        sidebarLineTeam1ScoreLabel.setPrefix(game.getTeam1().getTeamColor() + teamColorToCallsign(game.getTeam1().getTeamColor()) + game.getTeam1().getName());
+        sidebarLineTeam2ScoreLabel.setPrefix(game.getTeam2().getTeamColor() + teamColorToCallsign(game.getTeam2().getTeamColor()) + game.getTeam2().getName());
+        sidebarLineTeam1Score.setSuffix(getTeamScoreSuffix(game.getTeam1()));
+        sidebarLineTeam2Score.setSuffix(getTeamScoreSuffix(game.getTeam2()));
+    }
+
+    private String getTeamScoreSuffix(me.devvy.dodgebolt.team.Team team) {
+
+        StringBuilder suffix = new StringBuilder(team.getScore() > 0 ? team.getTeamColor().toString() : "");
+        for (int i = 0; i < team.getScore(); i++)
+            suffix.append("✕ ");
+
+        if (team.getScore() < game.getRoundsToWin())
+            suffix.append(ChatColor.GRAY);
+
+        for (int i = team.getScore(); i < game.getRoundsToWin(); i++)
+            suffix.append("✕ ");
+
+        int emptySpace = 15 - suffix.length();
+        if (emptySpace > 0)
+            suffix.insert(0, StringUtils.repeat(" ", emptySpace));
+
+        return suffix.toString().trim();
+    }
+
+    private String teamColorToCallsign(ChatColor color) {
+
+        switch (color) {
+
+            case RED:
+                return "♡ ";
+
+            case BLUE:
+                return "❃ ";
+
+            case BLACK:
+                return "♤ ";
+
+            case AQUA:
+                return "♢ ";
+
+            case DARK_PURPLE:
+                return "Ω ";
+
+            case YELLOW:
+                return "♕ ";
+
+            case GOLD:
+                return "☆ ";
+
+            case GRAY:
+                return "☁ ";
+
+            case WHITE:
+                return "☃ ";
+
+            case GREEN:
+                return "☺ ";
+
+            case DARK_GRAY:
+                return "✉ ";
+
+            case DARK_GREEN:
+                return "☩ ";
+
+            case DARK_RED:
+                return "☭ ";
+
+            case LIGHT_PURPLE:
+                return "♬ ";
+
+            case DARK_BLUE:
+                return "▽ ";
+
+            case DARK_AQUA:
+                return "₪ ";
+
+            default:
+                throw new IllegalArgumentException("not a color!");
+
+
+        }
+
     }
 
     @EventHandler

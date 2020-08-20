@@ -14,16 +14,38 @@ public class Phrases {
             "%s" + ChatColor.DARK_GRAY + " was BBQ'd",
             "%s" + ChatColor.DARK_GRAY + " took the L",
             "%s" + ChatColor.DARK_GRAY + " played themselves",
+            "%s" + ChatColor.DARK_GRAY + " encountered gravity for the first time",
+            "%s" + ChatColor.DARK_GRAY + " did not want to live on this planet anymore",
+            "%s" + ChatColor.DARK_GRAY + " took the easy way out",
+            "%s" + ChatColor.DARK_GRAY + " thought they were in creative mode",
+            "%s" + ChatColor.DARK_GRAY + " fought with gravity... and lost",
+            "%s" + ChatColor.DARK_GRAY + " wanted to go for a swim",
+            "%s" + ChatColor.DARK_GRAY + " should stick to peaceful mode",
+            "%s" + ChatColor.DARK_GRAY + " is bad at block game",
+            "%s" + ChatColor.DARK_GRAY + " isn't that bright...",
+            "%s" + ChatColor.DARK_GRAY + " went 3IQ",
     };
 
     private final static String[] KILLED_PHRASES = new String[]{
             "%s" + ChatColor.DARK_GRAY + " sniped " + "%s",
             "%s" + ChatColor.DARK_GRAY + " 720 instaswapped " + "%s",
+            "%s" + ChatColor.DARK_GRAY + " boatbanged " + "%s",
             "%s" + ChatColor.DARK_GRAY + " clowned " + "%s",
             "%s" + ChatColor.DARK_GRAY + " quickscoped " + "%s",
             "%s" + ChatColor.DARK_GRAY + " destroyed " + "%s",
             "%s" + ChatColor.DARK_GRAY + " outplayed " + "%s",
             "%s" + ChatColor.DARK_GRAY + " shot " + "%s",
+            "%s" + ChatColor.DARK_GRAY + " just wanted to be friends with " + "%s",
+            "%s" + ChatColor.DARK_GRAY + " reality checked " + "%s",
+            "%s" + ChatColor.DARK_GRAY + " ripped a 90 on " + "%s",
+            "%s" + ChatColor.DARK_GRAY + " finally killed " + "%s",
+            "%s" + ChatColor.DARK_GRAY + " is better at block game than " + "%s",
+            "%s" + ChatColor.DARK_GRAY + " schooled " + "%s",
+            "%s" + ChatColor.DARK_GRAY + " said no to " + "%s",
+            "%s" + ChatColor.DARK_GRAY + " showed " + "%s" + ChatColor.DARK_GRAY + " the way",
+            "%s" + ChatColor.DARK_GRAY + " decided it was " + "%s" + ChatColor.DARK_GRAY + "'s time to go",
+            "%s" + ChatColor.DARK_GRAY + " left " + "%s" + ChatColor.DARK_GRAY + " on read",
+            "%s" + ChatColor.DARK_GRAY + " sent " + "%s" + ChatColor.DARK_GRAY + " to a better place",
     };
 
     public static String getRandomSuicidePhrase(Player player) {

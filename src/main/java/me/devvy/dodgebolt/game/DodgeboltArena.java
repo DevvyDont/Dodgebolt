@@ -19,6 +19,9 @@ import org.bukkit.Difficulty;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.entity.Arrow;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.Item;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -171,6 +174,10 @@ public class DodgeboltArena {
         generateArena();
         changeTeamCarpetColors(tempTeamOneColor, tempTeamTwoColor);
         currentRing = 0;
+
+        for (Entity entity : getOrigin().getWorld().getEntities())
+            if (entity instanceof Item || entity instanceof Arrow)
+                entity.remove();
     }
 
     public void changeTeamCarpetColors(Material teamOneColor, Material teamTwoColor) {
