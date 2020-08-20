@@ -20,6 +20,12 @@ public class StartGameSign extends InteractableSign {
             return;
         }
 
-        player.sendMessage(ChatColor.GREEN + "TODO: Start the game :)");
+        if (game.getState() != DodgeboltGameState.WAITING) {
+            player.sendMessage(ChatColor.GRAY + "[" + ChatColor.YELLOW + "!" + ChatColor.GRAY + "] " + ChatColor.RED + "The game is already going!");
+            return;
+        }
+
+        player.sendMessage(ChatColor.GRAY + "[" + ChatColor.YELLOW + "!" + ChatColor.GRAY + "] " + ChatColor.GREEN + "Starting the game!");
+        game.startNewGame();
     }
 }

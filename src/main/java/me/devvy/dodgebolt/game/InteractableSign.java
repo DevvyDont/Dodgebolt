@@ -1,6 +1,7 @@
 package me.devvy.dodgebolt.game;
 
 import me.devvy.dodgebolt.Dodgebolt;
+import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
@@ -10,6 +11,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 
 public abstract class InteractableSign implements Listener {
@@ -80,6 +82,20 @@ public abstract class InteractableSign implements Listener {
         if (event.getClickedBlock().equals(location.getBlock()))
             handlePunched(event.getPlayer());
 
+    }
+
+    @EventHandler
+    public void onPlayerBroke(BlockBreakEvent event) {
+
+        if (location.getBlock() != event.getBlock())
+            return;
+
+        event.setCancelled(true);
+
+        if (event.getPlayer().isOp() && event.getPlayer().isSneaking())
+            event.setCancelled(false);
+        else if (event.getPlayer().isOp())
+            event.getPlayer().sendMessage(ChatColor.RED + "To break this sign break while sneaking.");
     }
 
 }

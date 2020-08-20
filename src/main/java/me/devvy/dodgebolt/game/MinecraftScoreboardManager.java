@@ -32,6 +32,9 @@ public class MinecraftScoreboardManager implements Listener {
         team2ScoreboardTeam = scoreboard.registerNewTeam("two");
         spectatorScoreboardTeam = scoreboard.registerNewTeam("spec");
 
+        team1ScoreboardTeam.setAllowFriendlyFire(false);
+        team2ScoreboardTeam.setAllowFriendlyFire(false);
+
         spectatorScoreboardTeam.setPrefix(ChatColor.GRAY + "[SPEC] ");
 
         for (Player player : Bukkit.getOnlinePlayers()) {
@@ -46,8 +49,8 @@ public class MinecraftScoreboardManager implements Listener {
         new BukkitRunnable() {
             @Override
             public void run() {
-                team1ScoreboardTeam.setPrefix(game.getTeam1().getTeamColor() + game.getTeam1().getName() + " ");
-                team2ScoreboardTeam.setPrefix(game.getTeam2().getTeamColor() + game.getTeam2().getName() + " ");
+                team1ScoreboardTeam.setPrefix(ChatColor.GRAY + "[" + game.getTeam1().getTeamColor() + game.getTeam1().getName() + ChatColor.GRAY + "] ");
+                team2ScoreboardTeam.setPrefix(ChatColor.GRAY + "[" + game.getTeam2().getTeamColor() + game.getTeam2().getName() + ChatColor.GRAY + "] ");
                 team1ScoreboardTeam.setColor(game.getTeam1().getTeamColor());
                 team2ScoreboardTeam.setColor(game.getTeam2().getTeamColor());
             }
@@ -86,6 +89,6 @@ public class MinecraftScoreboardManager implements Listener {
         org.bukkit.scoreboard.Team scoreboardTeam = event.getTeam() == game.getTeam1() ? team1ScoreboardTeam : team2ScoreboardTeam;
 
         scoreboardTeam.setColor(event.getNew());
-        scoreboardTeam.setPrefix(event.getNew().toString() +  event.getTeam().getName() + event.getNew().toString() + " ");
+        scoreboardTeam.setPrefix(ChatColor.GRAY + "[" + event.getNew() + event.getTeam().getName() + ChatColor.GRAY + "] ");
     }
 }

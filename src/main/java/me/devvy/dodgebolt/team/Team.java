@@ -4,6 +4,7 @@ import me.devvy.dodgebolt.Dodgebolt;
 import me.devvy.dodgebolt.events.PlayerJoinTeamEvent;
 import me.devvy.dodgebolt.events.PlayerLeaveTeamEvent;
 import me.devvy.dodgebolt.events.TeamColorChangeEvent;
+import org.apache.commons.lang.WordUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
@@ -14,14 +15,15 @@ public class Team {
 
     public static final int CAPACITY = 4;
 
-    private final String name;
+    private String name;
     private ChatColor teamColor;
     private int score = 0;
 
     private Set<UUID> members = new HashSet<>();
+    private TeamElimTracker elimTracker = new TeamElimTracker();
 
-    public Team(String name, ChatColor color) {
-        this.name = name;
+    public Team(ChatColor color) {
+        this.name = WordUtils.capitalizeFully(color.name().replace("_", " "));
         this.teamColor = color;
     }
 
@@ -34,11 +36,10 @@ public class Team {
     }
 
     public void setTeamColor(ChatColor teamColor) {
+        this.name = WordUtils.capitalizeFully(teamColor.name().replace("_", " "));
+        this.teamColor = teamColor;
         TeamColorChangeEvent event = new TeamColorChangeEvent(this, this.teamColor, teamColor);
         Dodgebolt.getPlugin(Dodgebolt.class).getServer().getPluginManager().callEvent(event);
-        if (event.isCancelled())
-            return;
-        this.teamColor = teamColor;
     }
 
     public Collection<UUID> getMembers() {
@@ -85,5 +86,13 @@ public class Team {
 
     public int getScore() {
         return score;
+    }
+
+    public TeamElimTracker getElimTracker() {
+        return elimTracker;
+    }
+
+    public void setElimTracker(TeamElimTracker elimTracker) {
+        this.elimTracker = elimTracker;
     }
 }

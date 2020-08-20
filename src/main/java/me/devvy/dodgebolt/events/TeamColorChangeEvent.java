@@ -6,14 +6,13 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 
-public class TeamColorChangeEvent extends Event implements Cancellable {
+public class TeamColorChangeEvent extends Event {
 
     public static final HandlerList HANDLER_LIST = new HandlerList();
 
     private Team team;
     private ChatColor old;
     private ChatColor _new;
-    private boolean cancelled;
 
     public TeamColorChangeEvent(Team team, ChatColor old, ChatColor _new) {
         this.team = team;
@@ -44,15 +43,5 @@ public class TeamColorChangeEvent extends Event implements Cancellable {
 
     public static HandlerList getHandlerList() {
         return HANDLER_LIST;
-    }
-
-    @Override
-    public boolean isCancelled() {
-        return cancelled;
-    }
-
-    @Override
-    public void setCancelled(boolean cancel) {
-        this.cancelled = cancel;
     }
 }

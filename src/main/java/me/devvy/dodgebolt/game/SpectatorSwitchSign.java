@@ -34,6 +34,12 @@ public class SpectatorSwitchSign extends InteractableSign implements Listener {
 
     @Override
     public void handlePunched(Player player) {
+
+        if (game.getState() != DodgeboltGameState.WAITING) {
+            player.sendMessage(ChatColor.GRAY + "[" + ChatColor.YELLOW + "!" + ChatColor.GRAY + "] " + ChatColor.RED + "There is a game in progress!");
+            return;
+        }
+
         game.setSpectating(player);
         player.sendMessage(ChatColor.GRAY + "[" + ChatColor.YELLOW + "!" + ChatColor.GRAY + "] " + (game.getPlayerTeam(player) != null ? ChatColor.AQUA + "Switched to spectator!" : ChatColor.RED + "Already spectating!"));
         update();

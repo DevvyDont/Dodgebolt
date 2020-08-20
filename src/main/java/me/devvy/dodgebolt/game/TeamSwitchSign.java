@@ -3,6 +3,7 @@ package me.devvy.dodgebolt.game;
 import me.devvy.dodgebolt.Dodgebolt;
 import me.devvy.dodgebolt.events.PlayerJoinTeamEvent;
 import me.devvy.dodgebolt.events.PlayerLeaveTeamEvent;
+import me.devvy.dodgebolt.events.TeamColorChangeEvent;
 import me.devvy.dodgebolt.team.Team;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -12,6 +13,7 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.block.Sign;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -37,6 +39,36 @@ public class TeamSwitchSign extends InteractableSign {
 
     @Override
     public void handlePunched(Player player) {
+
+        if (game.getState() != DodgeboltGameState.WAITING) {
+            player.sendMessage(ChatColor.GRAY + "[" + ChatColor.YELLOW + "!" + ChatColor.GRAY + "] " + ChatColor.RED + "There is a game in progress!");
+            return;
+        }
+
+        if (player.isSneaking()) {
+            int currentIndex = 0;
+            for (int i = 0; i < ChatColor.values().length; i++) {
+                if (ChatColor.values()[i] == team.getTeamColor()) {
+                    currentIndex = i;
+                    break;
+                }
+            }
+
+            if (currentIndex >= 15)
+                currentIndex = -1;
+
+            currentIndex++;
+
+            if (game.getOpposingTeam(team).getTeamColor() == ChatColor.values()[currentIndex])
+                currentIndex++;
+
+            if (currentIndex >= 15)
+                currentIndex = 0;
+
+            team.setTeamColor(ChatColor.values()[currentIndex]);
+            player.sendMessage(ChatColor.GRAY + "[" + ChatColor.YELLOW + "!" + ChatColor.GRAY + "] " + ChatColor.GRAY + "Changed team color to " + team.getTeamColor() + team.getTeamColor().name() + ChatColor.GRAY + "!");
+            return;
+        }
 
         if (team.isMember(player)) {
             player.sendMessage(ChatColor.GRAY + "[" + ChatColor.YELLOW + "!" + ChatColor.GRAY + "] " + ChatColor.RED + "You are already on this team!");
@@ -79,6 +111,11 @@ public class TeamSwitchSign extends InteractableSign {
 
     @EventHandler
     public void onPlayerJoinTeam(PlayerJoinTeamEvent event) {
+        doDelayedUpdate(5);
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onTeamColorChange(TeamColorChangeEvent event) {
         doDelayedUpdate(5);
     }
 }
