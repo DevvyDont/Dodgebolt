@@ -40,6 +40,9 @@ public class Team {
         this.teamColor = teamColor;
         TeamColorChangeEvent event = new TeamColorChangeEvent(this, this.teamColor, teamColor);
         Dodgebolt.getPlugin(Dodgebolt.class).getServer().getPluginManager().callEvent(event);
+
+        for (Player player : getMembersAsPlayers())
+            player.setDisplayName(teamColor + player.getName());
     }
 
     public Collection<UUID> getMembers() {
