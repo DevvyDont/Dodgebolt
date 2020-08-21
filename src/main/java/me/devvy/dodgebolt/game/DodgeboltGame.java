@@ -210,6 +210,11 @@ public class DodgeboltGame implements Listener {
         // Tp the players to their spots
         for (Team team : new Team[]{team1, team2}) {
 
+            if (team.getMembersAsPlayers().isEmpty()) {
+                endGame();
+                return;
+            }
+
             int i = 0;
             for (Player player : team.getMembersAsPlayers()) {
                 Location spawn = arena.getSpawnLocation(i, team == team2);
