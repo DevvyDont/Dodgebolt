@@ -367,8 +367,6 @@ public class DodgeboltGame implements Listener {
 
                     setSpectating(player);
                     player.teleport(arena.getSpawn().clone().add(Math.random() - .5, 0, Math.random() - .5));
-
-                    Team winner = team1.getScore() > team2.getScore() ? team1 : team2;
                 }
 
                 team1.setScore(0);
@@ -454,6 +452,7 @@ public class DodgeboltGame implements Listener {
         Player killer = player.getKiller();
         if (killer != null)
             PlayerStats.addPlayerKills(killer);
+        PlayerStats.addPlayerDeaths(player);
 
         for (Player otherPlayers : Bukkit.getOnlinePlayers()) {
 
@@ -564,6 +563,8 @@ public class DodgeboltGame implements Listener {
 
         if (outOfBowRange(event.getEntity().getLocation()))
             event.setCancelled(true);
+        else
+            PlayerStats.addArrowsFired((Player) event.getEntity());
     }
 
     @EventHandler(priority = EventPriority.MONITOR)

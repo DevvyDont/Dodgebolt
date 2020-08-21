@@ -23,10 +23,21 @@ public class Items {
         return bow;
     }
 
+    private static double getKDRatio(int kills, int deaths) {
+
+        if (deaths == 0)
+            deaths = 1;
+
+        double percent = (double) kills / (double) deaths;
+        return Math.round(percent * 100.0) / 100.0;
+    }
+
     public static void equipWinnerCrown(Player player) {
         int wins = PlayerStats.getPlayerWins(player);
         int rounds = PlayerStats.getPlayerRoundWins(player);
         int kills = PlayerStats.getPlayerKills(player);
+        int arrows = PlayerStats.getArrowsFired(player);
+        int deaths = PlayerStats.getPlayerDeaths(player);
         ItemStack crown = new ItemStack(Material.GOLDEN_HELMET);
         ItemMeta meta = crown.getItemMeta();
         meta.setDisplayName(ChatColor.YELLOW + "Winner's Crown");
@@ -34,9 +45,16 @@ public class Items {
                 "",
                 ChatColor.GRAY + "This crown belongs to " + player.getDisplayName(),
                 "",
-                ChatColor.AQUA + "Lifetime Wins: " + ChatColor.YELLOW + wins,
-                ChatColor.AQUA + "Lifetime Kills: " + ChatColor.YELLOW + kills,
-                ChatColor.AQUA + "Rounds Won: " + ChatColor.YELLOW + rounds
+                ChatColor.LIGHT_PURPLE + ChatColor.BOLD.toString() +  "Lifetime Stats",
+                ChatColor.AQUA + "Game Wins: " + ChatColor.YELLOW + wins,
+                ChatColor.AQUA + "Round Wins: " + ChatColor.YELLOW + rounds,
+                "",
+                ChatColor.AQUA + "Players Killed: " + ChatColor.GREEN + kills,
+                ChatColor.AQUA + "Deaths: " + ChatColor.RED + deaths,
+                ChatColor.AQUA + "K/D Ratio: " + ChatColor.GOLD + getKDRatio(kills, deaths),
+                "",
+                ChatColor.AQUA + "Arrows Fired: " + ChatColor.GREEN + arrows,
+                ChatColor.AQUA + "Accuracy: " + ChatColor.GREEN + Math.round((((float)kills / arrows) * 100) * 100.0) / 100.0 + "%"
         ));
         meta.addEnchant(Enchantment.DURABILITY, 10, true);
         meta.addItemFlags(ItemFlag.HIDE_ENCHANTS, ItemFlag.HIDE_UNBREAKABLE, ItemFlag.HIDE_ATTRIBUTES);
