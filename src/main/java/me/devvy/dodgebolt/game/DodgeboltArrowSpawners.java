@@ -1,5 +1,6 @@
 package me.devvy.dodgebolt.game;
 
+import com.destroystokyo.paper.event.entity.ProjectileCollideEvent;
 import me.devvy.dodgebolt.Dodgebolt;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -9,6 +10,7 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.*;
@@ -57,6 +59,16 @@ public class DodgeboltArrowSpawners implements Listener {
         event.getEntity().remove();
     }
 
+    @EventHandler(priority = EventPriority.LOW)
+    public void onStrayArrowCollide(ProjectileCollideEvent event) {
+
+        if (game.getState() != DodgeboltGameState.INGAME)
+            return;
+
+        if (event.getEntity().getShooter() == null && event.getCollidedWith() instanceof Player)
+            event.setCancelled(true);
+    }
+
     @EventHandler
     public void onPlayerShotArrow(ProjectileLaunchEvent event) {
 
@@ -64,6 +76,12 @@ public class DodgeboltArrowSpawners implements Listener {
             return;
 
         setupArrow((Arrow) event.getEntity());
+    }
+
+    @EventHandler
+    public void onArrowStackMerge(ItemMergeEvent event) {
+        if (game.getState() == DodgeboltGameState.INGAME && event.getEntity().getItemStack().getType() == Material.ARROW)
+            event.setCancelled(true);
     }
 
     @EventHandler
