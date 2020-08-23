@@ -46,6 +46,16 @@ public class Phrases {
             "%s" + ChatColor.DARK_GRAY + " decided it was " + "%s" + ChatColor.DARK_GRAY + "'s time to go",
             "%s" + ChatColor.DARK_GRAY + " left " + "%s" + ChatColor.DARK_GRAY + " on read",
             "%s" + ChatColor.DARK_GRAY + " sent " + "%s" + ChatColor.DARK_GRAY + " to a better place",
+            "%s" + ChatColor.DARK_GRAY + " sent " + "%s" + ChatColor.DARK_GRAY + " back to the playground",
+    };
+
+    private final static String[] TEAMKILL_PHRASES = new String[]{
+            ChatColor.DARK_GRAY + "step bro:  %s" + ChatColor.DARK_GRAY + " didn't know what " + "%s" + ChatColor.DARK_GRAY + " was doing",
+            "%s" + ChatColor.DARK_GRAY + " boxed their teammate " + "%s" + ChatColor.DARK_GRAY + " like a fish",
+            "%s" + ChatColor.DARK_GRAY + " didn't realize friendly fire was on, sorry " + "%s",
+            "%s" + ChatColor.DARK_GRAY + " obliterated " + "%s" + ChatColor.DARK_GRAY + " so the other team didn't have to",
+            "%s" + ChatColor.DARK_GRAY + " ????? " + "%s",
+            "%s" + ChatColor.DARK_GRAY + " forgot this was a team game. RIP " + "%s",
     };
 
     public static String getRandomSuicidePhrase(Player player) {
@@ -55,6 +65,11 @@ public class Phrases {
 
     public static String getRandomKilledPhrase(Player player, Player killer) {
         String phrase = KILLED_PHRASES[(int) (Math.random() * KILLED_PHRASES.length)];
+        return String.format(phrase, killer.getDisplayName(), player.getDisplayName());
+    }
+
+    public static String getRandomTeamKillPhrase(Player player, Player killer) {
+        String phrase = TEAMKILL_PHRASES[(int) (Math.random() * TEAMKILL_PHRASES.length)];
         return String.format(phrase, killer.getDisplayName(), player.getDisplayName());
     }
 

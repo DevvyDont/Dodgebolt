@@ -256,6 +256,8 @@ public class DodgeboltGame implements Listener {
             if (team1.getElimTracker().getTeamMembersAlive() == 1 && team2.getElimTracker().getTeamMembersAlive() == 1)
                 player.playSound(player.getEyeLocation().add(0, 60, 0), Sound.MUSIC_DISC_PIGSTEP, 5.5f, 1);
 
+            player.setGlowing(false);
+
             player.setFireTicks(0);
         }
 
@@ -441,6 +443,10 @@ public class DodgeboltGame implements Listener {
     }
 
     public boolean outOfBowRange(Location location) {
+
+        if (Math.abs(location.getBlockY() - arena.getOrigin().getBlockY()) > 3)
+            return false;
+
         int offset = Math.abs(arena.getOrigin().getBlockX() - location.getBlockX()) > 5 ? 0 : 1;
         return Math.abs(arena.getOrigin().getBlockZ() - location.getBlockZ()) < 3 + offset;
     }
@@ -455,7 +461,7 @@ public class DodgeboltGame implements Listener {
             return;
 
         Player killer = player.getKiller();
-        if (killer != null)
+        if (killer != null && getPlayerTeam(killer) != team)
             PlayerStats.addPlayerKills(killer);
         PlayerStats.addPlayerDeaths(player);
 
@@ -465,9 +471,9 @@ public class DodgeboltGame implements Listener {
                 otherPlayers.playSound(otherPlayers.getEyeLocation().add(0, 60, 0), Sound.MUSIC_DISC_PIGSTEP, 5.2f, 1);
 
             if (otherPlayers == killer)
-                otherPlayers.sendTitle(ChatColor.GRAY + "[" + ChatColor.RED + "✘" + ChatColor.GRAY + "] " + player.getDisplayName(), getBothTeamAliveCountString(), 5, 15, 5);
+                otherPlayers.sendTitle(getBothTeamAliveCountString(),ChatColor.GRAY + "[" + ChatColor.RED + "✘" + ChatColor.GRAY + "] " + player.getDisplayName(), 5, 15, 5);
             else
-                otherPlayers.sendTitle("", getBothTeamAliveCountString(), 5, 15, 5);
+                otherPlayers.sendTitle(getBothTeamAliveCountString(), "", 5, 15, 5);
 
             Team otherPlayersTeam = getPlayerTeam(otherPlayers);
             if (otherPlayersTeam == null || getOpposingTeam(otherPlayersTeam) == team)
@@ -480,7 +486,9 @@ public class DodgeboltGame implements Listener {
         player.setAllowFlight(true);
 
         if (wasQuit)
-            Bukkit.broadcastMessage(Phrases.getRandomSuicidePhrase(player));
+            Bukkit.broadcastMessage(ChatColor.GRAY + "[" + ChatColor.RED + "✘" + ChatColor.GRAY + "] " + Phrases.getRandomSuicidePhrase(player));
+        else if (killer != player && getPlayerTeam(player) == getPlayerTeam(killer))
+            Bukkit.broadcastMessage(ChatColor.GRAY + "[" + ChatColor.RED + "✘" + ChatColor.GRAY + "] " + Phrases.getRandomTeamKillPhrase(killer, player));
         else
             Bukkit.broadcastMessage(ChatColor.GRAY + "[" + ChatColor.RED + "✘" + ChatColor.GRAY + "] " + (killer != null ? Phrases.getRandomKilledPhrase(player, killer) : Phrases.getRandomSuicidePhrase(player)));
 

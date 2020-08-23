@@ -45,8 +45,8 @@ public class MinecraftScoreboardManager implements Listener {
         team2ScoreboardTeam = scoreboard.registerNewTeam("two");
         spectatorScoreboardTeam = scoreboard.registerNewTeam("spec");
 
-        team1ScoreboardTeam.setAllowFriendlyFire(false);
-        team2ScoreboardTeam.setAllowFriendlyFire(false);
+        team1ScoreboardTeam.setAllowFriendlyFire(true);
+        team2ScoreboardTeam.setAllowFriendlyFire(true);
 
         spectatorScoreboardTeam.setPrefix(ChatColor.GRAY + "[SPEC] ");
 
