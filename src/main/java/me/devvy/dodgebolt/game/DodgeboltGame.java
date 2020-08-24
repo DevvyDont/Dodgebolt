@@ -22,6 +22,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockFromToEvent;
 import org.bukkit.event.entity.*;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryType;
@@ -487,8 +488,8 @@ public class DodgeboltGame implements Listener {
 
         if (wasQuit)
             Bukkit.broadcastMessage(ChatColor.GRAY + "[" + ChatColor.RED + "✘" + ChatColor.GRAY + "] " + Phrases.getRandomSuicidePhrase(player));
-        else if (killer != player && getPlayerTeam(player) == getPlayerTeam(killer))
-            Bukkit.broadcastMessage(ChatColor.GRAY + "[" + ChatColor.RED + "✘" + ChatColor.GRAY + "] " + Phrases.getRandomTeamKillPhrase(killer, player));
+        else if (killer != null && killer != player && getPlayerTeam(player) == getPlayerTeam(killer))
+            Bukkit.broadcastMessage(ChatColor.GRAY + "[" + ChatColor.RED + "✘" + ChatColor.GRAY + "] " + Phrases.getRandomTeamKillPhrase(player, killer));
         else
             Bukkit.broadcastMessage(ChatColor.GRAY + "[" + ChatColor.RED + "✘" + ChatColor.GRAY + "] " + (killer != null ? Phrases.getRandomKilledPhrase(player, killer) : Phrases.getRandomSuicidePhrase(player)));
 
@@ -623,6 +624,13 @@ public class DodgeboltGame implements Listener {
     @EventHandler
     public void onClickedArmor(InventoryClickEvent event) {
         if (isInProgress() && event.getSlotType() == InventoryType.SlotType.ARMOR)
+            event.setCancelled(true);
+    }
+
+    @EventHandler
+    public void onLavaFlow(BlockFromToEvent event) {
+
+        if (event.getBlock().getType() == Material.LAVA)
             event.setCancelled(true);
     }
 
