@@ -1,12 +1,9 @@
 package me.devvy.dodgebolt.game;
 
-import com.google.common.base.Strings;
-import com.sk89q.util.StringUtil;
 import me.devvy.dodgebolt.Dodgebolt;
 import me.devvy.dodgebolt.events.PlayerJoinTeamEvent;
 import me.devvy.dodgebolt.events.PlayerLeaveTeamEvent;
 import me.devvy.dodgebolt.events.TeamColorChangeEvent;
-import org.apache.commons.lang.StringUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
@@ -112,28 +109,30 @@ public class MinecraftScoreboardManager implements Listener {
 
     public void updateSidebar() {
         sidebarLineCurrRound.setPrefix(ChatColor.YELLOW + ChatColor.BOLD.toString() + "Current Round: ");
-        sidebarLineCurrRound.setSuffix(ChatColor.WHITE.toString() + (game.getState() == DodgeboltGameState.WAITING ? 0 : (game.getTeam1().getScore() + game.getTeam2().getScore() + 1)) + "/" + (game.getRoundsToWin() * 2 - 1));
+        sidebarLineCurrRound.setSuffix(ChatColor.WHITE.toString() + (game.getState() == DodgeboltGameState.WAITING ? 0 : (Math.min(game.getTeam1().getScore() + game.getTeam2().getScore() + 1, game.getRoundsToWin() * 2 -2))) + "/" + (game.getRoundsToWin() * 2 - 2));
         sidebarLineTeam1ScoreLabel.setPrefix(game.getTeam1().getTeamColor() + teamColorToCallsign(game.getTeam1().getTeamColor()) + game.getTeam1().getName());
         sidebarLineTeam2ScoreLabel.setPrefix(game.getTeam2().getTeamColor() + teamColorToCallsign(game.getTeam2().getTeamColor()) + game.getTeam2().getName());
-        sidebarLineTeam1Score.setSuffix(getTeamScoreSuffix(game.getTeam1()));
-        sidebarLineTeam2Score.setSuffix(getTeamScoreSuffix(game.getTeam2()));
+
+        String preSufTeam1 = getTeamScorePrefixSuffix(game.getTeam1());
+        String preSufTeam2 = getTeamScorePrefixSuffix(game.getTeam2());
+        sidebarLineTeam1Score.setPrefix(preSufTeam1);
+        sidebarLineTeam2Score.setPrefix(preSufTeam2);
     }
 
-    private String getTeamScoreSuffix(me.devvy.dodgebolt.team.Team team) {
+    private String getTeamScorePrefixSuffix(me.devvy.dodgebolt.team.Team team) {
 
-        StringBuilder suffix = new StringBuilder(team.getScore() > 0 ? team.getTeamColor().toString() : "");
+        if (game.getRoundsToWin() > 5)
+            return team.getTeamColor().toString() + ChatColor.BOLD + team.getScore() + ChatColor.GRAY + " / " + ChatColor.WHITE + ChatColor.BOLD + game.getRoundsToWin();
+
+        StringBuilder suffix = new StringBuilder(team.getScore() > 0 ? team.getTeamColor().toString() + ChatColor.BOLD : "");
         for (int i = 0; i < team.getScore(); i++)
             suffix.append("✕ ");
 
         if (team.getScore() < game.getRoundsToWin())
-            suffix.append(ChatColor.GRAY);
+            suffix.append(ChatColor.GRAY).append(ChatColor.BOLD.toString());
 
         for (int i = team.getScore(); i < game.getRoundsToWin(); i++)
             suffix.append("✕ ");
-
-        int emptySpace = 15 - suffix.length();
-        if (emptySpace > 0)
-            suffix.insert(0, StringUtils.repeat(" ", emptySpace));
 
         return suffix.toString().trim();
     }
@@ -176,7 +175,7 @@ public class MinecraftScoreboardManager implements Listener {
                 return "✉ ";
 
             case DARK_GREEN:
-                return "☩ ";
+                return "▽ ";
 
             case DARK_RED:
                 return "☭ ";

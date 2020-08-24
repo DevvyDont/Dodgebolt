@@ -5,16 +5,13 @@ import me.devvy.dodgebolt.events.PlayerJoinTeamEvent;
 import me.devvy.dodgebolt.events.PlayerLeaveTeamEvent;
 import me.devvy.dodgebolt.events.TeamColorChangeEvent;
 import me.devvy.dodgebolt.team.Team;
-import org.bukkit.Bukkit;
+import me.devvy.dodgebolt.util.ColorTranslator;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
-import org.bukkit.block.Sign;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
-import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -46,27 +43,28 @@ public class TeamSwitchSign extends InteractableSign {
         }
 
         if (player.isSneaking()) {
-            int currentIndex = 0;
-            for (int i = 0; i < ChatColor.values().length; i++) {
-                if (ChatColor.values()[i] == team.getTeamColor()) {
+
+            int currentIndex = -1;
+            for (int i = 0; i < ColorTranslator.ALLOWED_TEAM_COLORS.length; i++) {
+                if (ColorTranslator.ALLOWED_TEAM_COLORS[i] == team.getTeamColor()) {
                     currentIndex = i;
                     break;
                 }
             }
 
-            if (currentIndex >= 15)
+            if (currentIndex == ColorTranslator.ALLOWED_TEAM_COLORS.length - 1)
                 currentIndex = -1;
 
             currentIndex++;
 
-            if (game.getOpposingTeam(team).getTeamColor() == ChatColor.values()[currentIndex])
+            if (game.getOpposingTeam(team).getTeamColor() == ColorTranslator.ALLOWED_TEAM_COLORS[currentIndex])
                 currentIndex++;
 
-            if (currentIndex >= 15)
+            if (currentIndex >= ColorTranslator.ALLOWED_TEAM_COLORS.length)
                 currentIndex = 0;
 
-            team.setTeamColor(ChatColor.values()[currentIndex]);
-            player.sendMessage(ChatColor.GRAY + "[" + ChatColor.YELLOW + "!" + ChatColor.GRAY + "] " + ChatColor.GRAY + "Changed team color to " + team.getTeamColor() + team.getTeamColor().name() + ChatColor.GRAY + "!");
+            team.setTeamColor(ColorTranslator.ALLOWED_TEAM_COLORS[currentIndex]);
+            player.sendActionBar(ChatColor.GRAY + "[" + ChatColor.YELLOW + "!" + ChatColor.GRAY + "] " + ChatColor.GRAY + "Changed team color to " + team.getTeamColor() + team.getTeamColor().name() + ChatColor.GRAY + "!");
             return;
         }
 

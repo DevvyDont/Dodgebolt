@@ -13,57 +13,6 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 public class Fireworks {
 
-    public static Color translateChatColorToColor(ChatColor chatColor) {
-
-        switch (chatColor) {
-            case DARK_GRAY:
-            case GRAY:
-                return Color.GRAY;
-
-            case DARK_AQUA:
-                return Color.TEAL;
-
-            case DARK_BLUE:
-
-            case BLUE:
-                return Color.BLUE;
-
-            case WHITE:
-                return Color.WHITE;
-
-            case GREEN:
-
-            case DARK_GREEN:
-                return Color.GREEN;
-
-            case DARK_RED:
-
-            case RED:
-                return Color.RED;
-
-            case YELLOW:
-                return Color.YELLOW;
-
-            case BLACK:
-                return Color.BLACK;
-
-            case GOLD:
-                return Color.ORANGE;
-
-            case AQUA:
-                return Color.AQUA;
-
-            case LIGHT_PURPLE:
-
-            case DARK_PURPLE:
-                return Color.PURPLE;
-
-            default:
-                throw new IllegalArgumentException("Not a color!");
-        }
-
-    }
-
     public static void spawnFireworksInstantly(Location location, Color color) {
         Firework firework = (Firework) location.getWorld().spawnEntity(location.add(0, .5, 0), EntityType.FIREWORK);
         FireworkMeta meta = firework.getFireworkMeta();

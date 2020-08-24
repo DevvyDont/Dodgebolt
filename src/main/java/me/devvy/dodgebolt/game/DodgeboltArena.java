@@ -34,13 +34,14 @@ public class DodgeboltArena {
 
     private final Location origin;
     private final Location spawn;  // Used for knowing where to spawn spectators and tp ppl that died
+    private final String schematicPath = "/WorldEdit/schematics/dodgebolt_arena.schem";
     private boolean generated = false;
 
     public static final int X_ARENA_RADIUS = 15;  // From center to side walls
     public static final int Z_ARENA_RADIUS = 17;  // From center to back walls
 
-    private Material currentTeamOneColor = Material.BLUE_CARPET;
-    private Material currentTeamTwoColor = Material.ORANGE_CARPET;
+    private ChatColor currentTeamOneColor = ChatColor.BLUE;
+    private ChatColor currentTeamTwoColor = ChatColor.LIGHT_PURPLE;
 
     private List<DodgeboltArenaDisappearingRing> rings = new ArrayList<>();
 
@@ -48,7 +49,7 @@ public class DodgeboltArena {
 
     public DodgeboltArena(Location origin) {
         this.origin = origin;
-        this.spawn = origin.clone().add(0, 5, 0);
+        this.spawn = origin.clone().add(0, 6, 0);
         this.spawn.setYaw(90);
 
         this.origin.getWorld().setDifficulty(Difficulty.PEACEFUL);
@@ -127,12 +128,9 @@ public class DodgeboltArena {
 
     public void generateArena() {
 
-        currentTeamOneColor = Material.BLUE_CARPET;
-        currentTeamTwoColor = Material.ORANGE_CARPET;
-
         Clipboard clipboard;
 
-        File file = new File(Dodgebolt.getPlugin(Dodgebolt.class).getDataFolder().getParent() + "/WorldEdit/schematics/dodgebolt_arena.schem");
+        File file = new File(Dodgebolt.getPlugin(Dodgebolt.class).getDataFolder().getParent() + schematicPath);
         ClipboardFormat format = ClipboardFormats.findByFile(file);
 
         if (format == null)
@@ -162,17 +160,14 @@ public class DodgeboltArena {
 
         this.generated = true;
         currentRing = 0;
-
     }
 
     /**
      * Used to reload the arena back to what it is, used for in between rounds
      */
     public void restoreArena() {
-        Material tempTeamOneColor = currentTeamOneColor;
-        Material tempTeamTwoColor = currentTeamTwoColor;
         generateArena();
-        changeTeamCarpetColors(tempTeamOneColor, tempTeamTwoColor);
+        changeTeamColors(currentTeamOneColor, currentTeamTwoColor);
         currentRing = 0;
 
         for (Entity entity : getOrigin().getWorld().getEntities())
@@ -180,35 +175,20 @@ public class DodgeboltArena {
                 entity.remove();
     }
 
-    public void changeTeamCarpetColors(Material teamOneColor, Material teamTwoColor) {
-
-
-        // loop on the xz plane and replace the old colors
-        for (int x = origin.getBlockX() - X_ARENA_RADIUS + 1; x < origin.getBlockX() + X_ARENA_RADIUS; x++) {
-            for (int z = origin.getBlockZ() - Z_ARENA_RADIUS + 1; z < origin.getBlockZ() + Z_ARENA_RADIUS; z++) {
-                Block b = origin.getWorld().getBlockAt(x, origin.getBlockY(), z);
-
-                if (b.getType() == Material.WHITE_CARPET || b.getType() == Material.BLACK_CARPET)
-                    continue;
-
-                Material newMat = z - origin.getBlockZ() > 0 ? teamOneColor : teamTwoColor;
-                b.setType(newMat);
-            }
-        }
+    public void changeTeamColors(ChatColor teamOneColor, ChatColor teamTwoColor) {
 
         // replace the walls on the outside
         for (int x = origin.getBlockX() - X_ARENA_RADIUS - 1; x <= origin.getBlockX() + X_ARENA_RADIUS; x++) {
             for (int y = spawn.getBlockY() - 14; y < spawn.getBlockY() - 1; y++) {
                 for (int z = origin.getBlockZ() - Z_ARENA_RADIUS - 1; z <= origin.getBlockZ() + Z_ARENA_RADIUS; z++){
 
-                    if (origin.getWorld().getBlockAt(x, y, z).getType() == Material.WHITE_CONCRETE || origin.getWorld().getBlockAt(x, y, z).getType() == Material.BLACK_CONCRETE)
+                    Block b = origin.getWorld().getBlockAt(x, y, z);
+
+                    if (!ColorTranslator.isTeamBlock(b.getType()))
                         continue;
 
-                    if (origin.getWorld().getBlockAt(x, y, z).getType().toString().toLowerCase().contains("concrete")) {
-                        Material color = z - origin.getBlockZ() > 0 ? teamOneColor : teamTwoColor;
-                        origin.getWorld().getBlockAt(x, y, z).setType(Material.valueOf(color.toString().replace("CARPET", "CONCRETE")));
-                    }
-
+                    ChatColor color = z - origin.getBlockZ() > 0 ?  teamOneColor : teamTwoColor;
+                    b.setType(ColorTranslator.getTranslatedTeamBlock(b.getType(), color), false);
                 }
             }
         }
@@ -218,17 +198,6 @@ public class DodgeboltArena {
         this.currentTeamTwoColor = teamTwoColor;
         for (DodgeboltArenaDisappearingRing ring : rings)
             ring.updateStoredBlocks();
-    }
-
-    public void changeTeamCarpetColors(ChatColor teamOneColor, ChatColor teamTwoColor) {
-
-        Material newTeamOne = ColorTranslator.chatColorToCarpet(teamOneColor);
-        Material newTeamTwo = ColorTranslator.chatColorToCarpet(teamTwoColor);
-
-        while (newTeamOne == newTeamTwo)
-            newTeamTwo = ColorTranslator.getRandomCarpetColor();
-
-        changeTeamCarpetColors(newTeamOne, newTeamTwo);
     }
 
     /**
@@ -301,6 +270,19 @@ public class DodgeboltArena {
 
     public Location[] getArrowSpawnLocations() {
         return new Location[]{origin.clone().toCenterLocation().add(0, 0, 6), origin.clone().toCenterLocation().add(0, 0, -6)};
+    }
+
+    public boolean isInArena(Location location) {
+
+        int MAX_X = X_ARENA_RADIUS + 1;
+        int MAX_Z = Z_ARENA_RADIUS + 1;
+        int MAX_Y = 6;
+
+        boolean inXBounds = Math.abs(location.getBlockX() - origin.getBlockX()) <= MAX_X;
+        boolean inYBounds = Math.abs(location.getBlockY() - origin.getBlockY()) <= MAX_Y;
+        boolean inZBounds = Math.abs(location.getBlockZ() - origin.getBlockZ()) <= MAX_Z;
+
+        return inXBounds && inYBounds && inZBounds;
     }
 
     public void destroyArena() {

@@ -16,7 +16,7 @@ public class DodgeboltIngamePhaseTask extends DodgeboltPhaseTask {
     protected void runGameLoop() {
 
         if (unpausedElapsed > 0 && unpausedElapsed % 20 == 0)
-            game.getArena().shrinkArena();
+            game.getStadium().getArena().shrinkArena();
 
         for (Player player : Bukkit.getOnlinePlayers())
             player.sendActionBar(game.getBothTeamAliveCountString());

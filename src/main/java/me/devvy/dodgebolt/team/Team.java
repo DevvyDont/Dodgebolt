@@ -4,6 +4,7 @@ import me.devvy.dodgebolt.Dodgebolt;
 import me.devvy.dodgebolt.events.PlayerJoinTeamEvent;
 import me.devvy.dodgebolt.events.PlayerLeaveTeamEvent;
 import me.devvy.dodgebolt.events.TeamColorChangeEvent;
+import me.devvy.dodgebolt.util.ColorTranslator;
 import org.apache.commons.lang.WordUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -23,7 +24,7 @@ public class Team {
     private TeamElimTracker elimTracker = new TeamElimTracker();
 
     public Team(ChatColor color) {
-        this.name = WordUtils.capitalizeFully(color.name().replace("_", " "));
+        this.name = ColorTranslator.chatColorToActualName(color);
         this.teamColor = color;
     }
 
@@ -36,7 +37,7 @@ public class Team {
     }
 
     public void setTeamColor(ChatColor teamColor) {
-        this.name = WordUtils.capitalizeFully(teamColor.name().replace("_", " "));
+        this.name = ColorTranslator.chatColorToActualName(teamColor);
         this.teamColor = teamColor;
         TeamColorChangeEvent event = new TeamColorChangeEvent(this, this.teamColor, teamColor);
         Dodgebolt.getPlugin(Dodgebolt.class).getServer().getPluginManager().callEvent(event);

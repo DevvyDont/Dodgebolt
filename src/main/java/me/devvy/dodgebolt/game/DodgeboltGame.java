@@ -7,13 +7,9 @@ import me.devvy.dodgebolt.tasks.DodgeboltIntermissionPhaseTask;
 import me.devvy.dodgebolt.tasks.DodgeboltPhaseTask;
 import me.devvy.dodgebolt.tasks.DodgeboltPregamePhaseTask;
 import me.devvy.dodgebolt.team.Team;
-import me.devvy.dodgebolt.util.Fireworks;
-import me.devvy.dodgebolt.util.Items;
-import me.devvy.dodgebolt.util.Phrases;
-import me.devvy.dodgebolt.util.PlayerStats;
+import me.devvy.dodgebolt.util.*;
 import org.bukkit.*;
 import org.bukkit.block.BlockFace;
-import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Item;
@@ -29,7 +25,6 @@ import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.*;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -37,7 +32,7 @@ import java.util.*;
 
 public class DodgeboltGame implements Listener {
 
-    private final DodgeboltArena arena;
+    private final DodgeboltStadium stadium;
     private final Team team1;
     private final Team team2;
     private DodgeboltPhaseTask currentPhaseTask = null;
@@ -47,7 +42,8 @@ public class DodgeboltGame implements Listener {
 
     private final MinecraftScoreboardManager scoreboardManager;
 
-    private int roundsToWin = 5;
+    private int startingRoundsToWin = 3;
+    private int roundsToWin = startingRoundsToWin;
 
     public DodgeboltGame() {
         World arenaWorld = Bukkit.getWorld("world");
@@ -56,20 +52,20 @@ public class DodgeboltGame implements Listener {
 
         arenaWorld.setGameRule(GameRule.DO_FIRE_TICK, false);  // Important so lava doesn't destroy arena
 
-        arena = new DodgeboltArena(new Location(arenaWorld, 50, 100, 50));
-        arena.generateArena();
+        stadium = new DodgeboltStadium(new Location(arenaWorld, 50, 100, 50));
+        stadium.generateStadium();
 
         team1 = new Team(ChatColor.BLUE);
         team2 = new Team(ChatColor.LIGHT_PURPLE);
 
-        arena.changeTeamCarpetColors(team1.getTeamColor(), team2.getTeamColor());
+        stadium.changeTeamColors(team1.getTeamColor(), team2.getTeamColor());
 
         state = DodgeboltGameState.WAITING;
 
-        new TeamSwitchSign(this, arena.getSpawn().clone().add(-5, 0, 1), BlockFace.EAST, team1);
-        new TeamSwitchSign(this, arena.getSpawn().clone().add(-5, 0, -1),BlockFace.EAST, team2);
-        new SpectatorSwitchSign(this, arena.getSpawn().clone().add( -5, 0, 0), BlockFace.EAST);
-        new StartGameSign(this, arena.getSpawn().clone().add(-5, 1, 0), BlockFace.EAST);
+        new TeamSwitchSign(this, stadium.getSpawn().clone().add(-5, 0, 1), BlockFace.EAST, team1);
+        new TeamSwitchSign(this, stadium.getSpawn().clone().add(-5, 0, -1),BlockFace.EAST, team2);
+        new SpectatorSwitchSign(this, stadium.getSpawn().clone().add( -5, 0, 0), BlockFace.EAST);
+        new StartGameSign(this, stadium.getSpawn().clone().add(-5, 1, 0), BlockFace.EAST);
 
         scoreboardManager = new MinecraftScoreboardManager(this);
         Dodgebolt.getPlugin(Dodgebolt.class).getServer().getPluginManager().registerEvents(scoreboardManager, Dodgebolt.getPlugin(Dodgebolt.class));
@@ -81,7 +77,7 @@ public class DodgeboltGame implements Listener {
 
             player.setInvulnerable(true);
             player.setAllowFlight(true);
-            player.teleport(arena.getSpawn());
+            player.teleport(stadium.getSpawn());
             player.setGameMode(GameMode.SURVIVAL);
         }
     }
@@ -90,12 +86,20 @@ public class DodgeboltGame implements Listener {
         return roundsToWin;
     }
 
+    public int getStartingRoundsToWin() {
+        return startingRoundsToWin;
+    }
+
+    public void setStartingRoundsToWin(int startingRoundsToWin) {
+        this.startingRoundsToWin = startingRoundsToWin;
+    }
+
     public void setRoundsToWin(int roundsToWin) {
         this.roundsToWin = roundsToWin;
     }
 
-    public DodgeboltArena getArena() {
-        return arena;
+    public DodgeboltStadium getStadium() {
+        return stadium;
     }
 
     public Team getTeam1() {
@@ -177,7 +181,7 @@ public class DodgeboltGame implements Listener {
 
         ItemStack boots = new ItemStack(Material.LEATHER_BOOTS);
         LeatherArmorMeta bootMeta = (LeatherArmorMeta) boots.getItemMeta();
-        bootMeta.setColor(Fireworks.translateChatColorToColor(team.getTeamColor()));
+        bootMeta.setColor(ColorTranslator.translateChatColorToColor(team.getTeamColor()));
         bootMeta.setUnbreakable(true);
         bootMeta.addItemFlags(ItemFlag.HIDE_UNBREAKABLE);
         bootMeta.setDisplayName(team.getTeamColor() + team.getName() + " Boots");
@@ -194,19 +198,19 @@ public class DodgeboltGame implements Listener {
 
         setState(DodgeboltGameState.PREGAME_COUNTDOWN);
 
-        for (Entity entity : arena.getOrigin().getWorld().getEntities())
+        for (Entity entity : stadium.getOrigin().getWorld().getEntities())
             if (entity instanceof Item || entity instanceof Arrow)
                 entity.remove();
 
         float gamePercent = (team1.getScore() + team2.getScore() + 1f) / (roundsToWin * 2f - 1f);
         int newTick = (int) (14000 * gamePercent);
-        arena.getOrigin().getWorld().setTime(newTick);
+        stadium.getOrigin().getWorld().setTime(newTick);
 
         // Fix the arena
-        arena.restoreArena();
+        stadium.getArena().restoreArena();
 
         // Enable barriers
-        arena.enableBarriers();
+        stadium.getArena().enableBarriers();
 
         // Tp the players to their spots
         for (Team team : new Team[]{team1, team2}) {
@@ -218,7 +222,7 @@ public class DodgeboltGame implements Listener {
 
             int i = 0;
             for (Player player : team.getMembersAsPlayers()) {
-                Location spawn = arena.getSpawnLocation(i, team == team2);
+                Location spawn = stadium.getArena().getSpawnLocation(i, team == team2);
 
                 if (player.isDead())
                     player.spigot().respawn();
@@ -248,7 +252,7 @@ public class DodgeboltGame implements Listener {
 
         setState(DodgeboltGameState.INGAME);
 
-        arena.disableBarriers();
+        stadium.getArena().disableBarriers();
 
         for (Player player : Bukkit.getOnlinePlayers()) {
             player.playSound(player.getLocation(), Sound.BLOCK_ANVIL_DESTROY, 1, 1.5f);
@@ -262,7 +266,7 @@ public class DodgeboltGame implements Listener {
             player.setFireTicks(0);
         }
 
-        arrowSpawners = new DodgeboltArrowSpawners(this, Arrays.asList(arena.getArrowSpawnLocations()));
+        arrowSpawners = new DodgeboltArrowSpawners(this, Arrays.asList(stadium.getArena().getArrowSpawnLocations()));
 
     }
 
@@ -271,10 +275,17 @@ public class DodgeboltGame implements Listener {
 
         setState(DodgeboltGameState.INTERMISSION);
         winner.setScore(winner.getScore() + 1);
+
+        // If the teams scores are equal and the next point would be a game winner....
+        if (team1.getScore() == team2.getScore() && getRoundsToWin() - 1 == team1.getScore()) {
+            Bukkit.broadcastMessage(ChatColor.GRAY + "[" + ChatColor.DARK_RED + "!" + ChatColor.GRAY + "] " + ChatColor.RED + ChatColor.BOLD + "Overtime! " + ChatColor.YELLOW + "Another two rounds will be played!");
+            setRoundsToWin(team1.getScore() + 2);
+        }
+
         Bukkit.broadcastMessage(ChatColor.GRAY + "[" + ChatColor.YELLOW + "!" + ChatColor.GRAY + "] " + winner.getTeamColor() + ChatColor.BOLD.toString() + winner.getName() + ChatColor.GREEN + " won the round!");
         for (Player player : winner.getMembersAsPlayers()) {
             player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, .75f, 1);
-            Fireworks.spawnVictoryFireworks(player, Fireworks.translateChatColorToColor(winner.getTeamColor()));
+            Fireworks.spawnVictoryFireworks(player, ColorTranslator.translateChatColorToColor(winner.getTeamColor()));
             PlayerStats.addPlayerRoundWins(player);
         }
 
@@ -360,7 +371,7 @@ public class DodgeboltGame implements Listener {
             player.setAllowFlight(true);
         }
 
-        for (Entity entity : arena.getOrigin().getWorld().getEntities())
+        for (Entity entity : stadium.getOrigin().getWorld().getEntities())
             if (entity instanceof Item || entity instanceof Arrow)
                 entity.remove();
 
@@ -374,12 +385,13 @@ public class DodgeboltGame implements Listener {
                         player.spigot().respawn();
 
                     setSpectating(player);
-                    player.teleport(arena.getSpawn().clone().add(Math.random() - .5, 0, Math.random() - .5));
+                    player.teleport(stadium.getSpawn().clone().add(Math.random() - .5, 0, Math.random() - .5));
                 }
 
                 team1.setScore(0);
                 team2.setScore(0);
-                arena.restoreArena();
+                setRoundsToWin(startingRoundsToWin);
+                stadium.getArena().restoreArena();
                 setState(DodgeboltGameState.WAITING);
 
             }
@@ -387,13 +399,13 @@ public class DodgeboltGame implements Listener {
     }
 
     public void cleanup() {
-        arena.destroyArena();
+        stadium.getArena().destroyArena();
     }
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         setSpectating(event.getPlayer());
-        event.getPlayer().teleport(arena.getSpawn());
+        event.getPlayer().teleport(stadium.getSpawn());
         event.getPlayer().setGameMode(state == DodgeboltGameState.WAITING ? GameMode.SURVIVAL : GameMode.ADVENTURE);
         event.getPlayer().setAllowFlight(true);
     }
@@ -409,12 +421,12 @@ public class DodgeboltGame implements Listener {
         team1.removePlayer(event.getPlayer());
         team2.removePlayer(event.getPlayer());
 
-        event.getPlayer().teleport(arena.getSpawn());
+        event.getPlayer().teleport(stadium.getSpawn());
     }
 
     @EventHandler
     public void onPlayerRespawn(PlayerRespawnEvent event) {
-        event.setRespawnLocation(arena.getSpawn());
+        event.setRespawnLocation(stadium.getSpawn());
     }
 
     @EventHandler
@@ -440,16 +452,16 @@ public class DodgeboltGame implements Listener {
     @EventHandler
     public void onPlayerFellInVoid(PlayerMoveEvent event) {
         if (event.getTo().getY() < 0)
-            event.getPlayer().teleport(arena.getSpawn());
+            event.getPlayer().teleport(stadium.getSpawn());
     }
 
     public boolean outOfBowRange(Location location) {
 
-        if (Math.abs(location.getBlockY() - arena.getOrigin().getBlockY()) > 3)
+        if (Math.abs(location.getBlockY() - stadium.getOrigin().getBlockY()) > 3)
             return false;
 
-        int offset = Math.abs(arena.getOrigin().getBlockX() - location.getBlockX()) > 5 ? 0 : 1;
-        return Math.abs(arena.getOrigin().getBlockZ() - location.getBlockZ()) < 3 + offset;
+        int offset = Math.abs(stadium.getOrigin().getBlockX() - location.getBlockX()) > 5 ? 0 : 1;
+        return Math.abs(stadium.getOrigin().getBlockZ() - location.getBlockZ()) < 3 + offset;
     }
 
     public void handleIngameDeath(Player player, boolean wasQuit) {
@@ -496,9 +508,9 @@ public class DodgeboltGame implements Listener {
         if (team.getElimTracker().teamIsDead())
             exitGameRoundPhase(getOpposingTeam(team));
         else
-            arena.shrinkArena();
+            stadium.getArena().shrinkArena();
 
-        Fireworks.spawnFireworksInstantly(player.getLocation(), Fireworks.translateChatColorToColor(team.getTeamColor()));
+        Fireworks.spawnFireworksInstantly(player.getLocation(), ColorTranslator.translateChatColorToColor(team.getTeamColor()));
     }
 
     @EventHandler
@@ -510,8 +522,8 @@ public class DodgeboltGame implements Listener {
         if (getPlayerTeam(event.getPlayer()) == null)
             return;
 
-        if (event.getTo().getBlockZ() == arena.getOrigin().getBlockZ()) {
-            if (event.getTo().getBlockY() < arena.getOrigin().getBlockY() + 4) {
+        if (event.getTo().getBlockZ() == stadium.getOrigin().getBlockZ()) {
+            if (event.getTo().getBlockY() < stadium.getOrigin().getBlockY() + 4) {
                 event.setCancelled(true);
                 event.getPlayer().sendMessage(ChatColor.RED + "Stay on your side!");
             }
@@ -571,7 +583,7 @@ public class DodgeboltGame implements Listener {
             return;
 
         if (event.getProjectile() instanceof Arrow) {
-            ((Arrow) event.getProjectile()).setColor(Fireworks.translateChatColorToColor(playersTeam.getTeamColor()));
+            ((Arrow) event.getProjectile()).setColor(ColorTranslator.translateChatColorToColor(playersTeam.getTeamColor()));
             event.getProjectile().setGlowing(true);
         }
 
@@ -592,7 +604,7 @@ public class DodgeboltGame implements Listener {
         else if (event.getTeam() == team2)
             team2New = event.getNew();
 
-        arena.changeTeamCarpetColors(team1New, team2New);
+        stadium.changeTeamColors(team1New, team2New);
     }
 
     @EventHandler
