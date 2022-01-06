@@ -16,6 +16,7 @@ public final class Dodgebolt extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        game.cleanup();
+        if (game != null)
+            game.cleanup();
     }
 }

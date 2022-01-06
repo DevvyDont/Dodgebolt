@@ -130,11 +130,12 @@ public class DodgeboltArena {
 
         Clipboard clipboard;
 
-        File file = new File(Dodgebolt.getPlugin(Dodgebolt.class).getDataFolder().getParent() + schematicPath);
+        String path = Dodgebolt.getPlugin(Dodgebolt.class).getDataFolder().getParent() + schematicPath;
+        File file = new File(path);
         ClipboardFormat format = ClipboardFormats.findByFile(file);
 
         if (format == null)
-            throw new IllegalStateException("Could not find the arena schematic!!!");
+            throw new IllegalStateException("Could not find the arena schematic!!! It should be located at '" + path + "', download given schematic from the github releases tab");
 
         try (ClipboardReader reader = format.getReader(new FileInputStream(file))) {
             clipboard = reader.read();

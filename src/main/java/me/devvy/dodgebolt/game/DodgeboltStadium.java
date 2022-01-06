@@ -30,7 +30,7 @@ public class DodgeboltStadium {
     private final Location origin;
     private final Location spawn;  // Used for knowing where to spawn spectators and tp ppl that died
     private final DodgeboltArena arena;
-    private final String schematicPath = "/WorldEdit/schematics/dodgebolt_stadium_anything.schem";
+    private final String schematicPath = "/WorldEdit/schematics/dodgebolt_stadium.schem";
     private boolean generated = false;
 
     public static final int X_STADIUM_RADIUS = 24;  // From center to side walls
@@ -64,11 +64,12 @@ public class DodgeboltStadium {
 
         Clipboard clipboard;
 
-        File file = new File(Dodgebolt.getPlugin(Dodgebolt.class).getDataFolder().getParent() + schematicPath);
+        String path = Dodgebolt.getPlugin(Dodgebolt.class).getDataFolder().getParent() + schematicPath;
+        File file = new File(path);
         ClipboardFormat format = ClipboardFormats.findByFile(file);
 
         if (format == null)
-            throw new IllegalStateException("Could not find the stadium schematic!!!");
+            throw new IllegalStateException("Could not find the stadium schematic!!! It should be located at '" + path + "', download given schematic from the github releases tab");
 
         try (ClipboardReader reader = format.getReader(new FileInputStream(file))) {
             clipboard = reader.read();
