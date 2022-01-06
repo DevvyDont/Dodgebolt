@@ -2,6 +2,7 @@ package me.devvy.dodgebolt;
 
 import me.devvy.dodgebolt.game.DodgeboltGame;
 
+import me.devvy.dodgebolt.util.ConfigManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public final class Dodgebolt extends JavaPlugin {
@@ -10,6 +11,8 @@ public final class Dodgebolt extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        ConfigManager.setupDefaultConfig();
+
         game = new DodgeboltGame();
         getServer().getPluginManager().registerEvents(game, this);
     }

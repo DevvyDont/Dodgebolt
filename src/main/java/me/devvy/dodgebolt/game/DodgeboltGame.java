@@ -42,8 +42,8 @@ public class DodgeboltGame implements Listener {
 
     private final MinecraftScoreboardManager scoreboardManager;
 
-    private int startingRoundsToWin = 3;
-    private int roundsToWin = startingRoundsToWin;
+    private int startingRoundsToWin;
+    private int roundsToWin;
 
     public DodgeboltGame() {
         World arenaWorld = Bukkit.getWorld("world");
@@ -51,6 +51,9 @@ public class DodgeboltGame implements Listener {
             throw new IllegalStateException("There must be a world named 'world'!");
 
         arenaWorld.setGameRule(GameRule.DO_FIRE_TICK, false);  // Important so lava doesn't destroy arena
+
+        startingRoundsToWin = Dodgebolt.getPlugin(Dodgebolt.class).getConfig().getInt(ConfigManager.ROUND_WIN_LIMIT);
+        roundsToWin = startingRoundsToWin;
 
         stadium = new DodgeboltStadium(new Location(arenaWorld, 50, 100, 50));
         stadium.generateStadium();
@@ -276,10 +279,13 @@ public class DodgeboltGame implements Listener {
         setState(DodgeboltGameState.INTERMISSION);
         winner.setScore(winner.getScore() + 1);
 
-        // If the teams scores are equal and the next point would be a game winner....
-        if (team1.getScore() == team2.getScore() && getRoundsToWin() - 1 == team1.getScore()) {
-            Bukkit.broadcastMessage(ChatColor.GRAY + "[" + ChatColor.DARK_RED + "!" + ChatColor.GRAY + "] " + ChatColor.RED + ChatColor.BOLD + "Overtime! " + ChatColor.YELLOW + "Another two rounds will be played!");
-            setRoundsToWin(team1.getScore() + 2);
+        // Win by 2 rule?
+        if (Dodgebolt.getPlugin(Dodgebolt.class).getConfig().getBoolean(ConfigManager.WIN_BY_2)) {
+            // If the teams scores are equal and the next point would be a game winner....
+            if (team1.getScore() == team2.getScore() && getRoundsToWin() - 1 == team1.getScore()) {
+                Bukkit.broadcastMessage(ChatColor.GRAY + "[" + ChatColor.DARK_RED + "!" + ChatColor.GRAY + "] " + ChatColor.RED + ChatColor.BOLD + "Overtime! " + ChatColor.YELLOW + "Another two rounds will be played!");
+                setRoundsToWin(team1.getScore() + 2);
+            }
         }
 
         Bukkit.broadcastMessage(ChatColor.GRAY + "[" + ChatColor.YELLOW + "!" + ChatColor.GRAY + "] " + winner.getTeamColor() + ChatColor.BOLD.toString() + winner.getName() + ChatColor.GREEN + " won the round!");

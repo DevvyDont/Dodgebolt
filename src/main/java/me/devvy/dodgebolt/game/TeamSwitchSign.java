@@ -6,6 +6,7 @@ import me.devvy.dodgebolt.events.PlayerLeaveTeamEvent;
 import me.devvy.dodgebolt.events.TeamColorChangeEvent;
 import me.devvy.dodgebolt.team.Team;
 import me.devvy.dodgebolt.util.ColorTranslator;
+import me.devvy.dodgebolt.util.ConfigManager;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.block.BlockFace;
@@ -42,7 +43,14 @@ public class TeamSwitchSign extends InteractableSign {
             return;
         }
 
+        boolean opColorChangeRule = Dodgebolt.getPlugin(Dodgebolt.class).getConfig().getBoolean(ConfigManager.OP_CHANGE_COLOR);
+
         if (player.isSneaking()) {
+
+            if (opColorChangeRule && !player.isOp()) {
+                player.sendMessage(ChatColor.GRAY + "[" + ChatColor.DARK_RED + "!" + ChatColor.GRAY + "] " + ChatColor.RED + "You must be op to change team color!");
+                return;
+            }
 
             int currentIndex = -1;
             for (int i = 0; i < ColorTranslator.ALLOWED_TEAM_COLORS.length; i++) {
@@ -78,8 +86,10 @@ public class TeamSwitchSign extends InteractableSign {
             return;
         }
 
+        boolean showColorMessage = !opColorChangeRule || player.isOp();
+
         game.setPlayerTeam(player, team);
-        player.sendMessage(ChatColor.GRAY + "[" + ChatColor.YELLOW + "!" + ChatColor.GRAY + "] " + ChatColor.AQUA + "You joined " + team.getTeamColor() + team.getName() + ChatColor.AQUA + "!");
+        player.sendMessage(ChatColor.GRAY + "[" + ChatColor.YELLOW + "!" + ChatColor.GRAY + "] " + ChatColor.AQUA + "You joined " + team.getTeamColor() + team.getName() + ChatColor.AQUA + (showColorMessage ? "! Punch the sign while sneaking to change the team color!" : ""));
         update();
     }
 
