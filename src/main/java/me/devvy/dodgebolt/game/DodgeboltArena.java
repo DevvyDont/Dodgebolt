@@ -202,59 +202,76 @@ public class DodgeboltArena {
     }
 
     /**
-     * Gets a spawn location of the arena, i should be 0-3
+     * Returns an array of spawn locations relative to the origin of the arena for one side
      *
-     * @param i Index of the player we should spawn them at
-     * @param negateZ Whether or not we should negate the Z coordinate, we do this if we want to get a spawn for the other side of the field
+     * @param mirror if you want to get the locations for team 2, pass in true
+     * @return an array of Locations representing spawns
      */
-    public Location getSpawnLocation(int i, boolean negateZ) {
-        int spawnIndex = i % 4;
+    public Location[] getSpawnLocations(boolean mirror) {
 
-        Location location = origin.clone();
-        if (!negateZ)
-            location.setYaw(180);
+        int mirrorMult = mirror ? -1 : 1;
 
-        switch (spawnIndex) {
-            case 0:
-                return location.add(9 * (negateZ ? -1 : 1) + .5, 0, 9 * (negateZ ? -1 : 1) +  + .5);
-            case 1:
-                return location.add(-9 * (negateZ ? -1 : 1) + .5, 0, 9 * (negateZ ? -1 : 1) + .5);
-            case 2:
-                return location.add(3 * (negateZ ? -1 : 1) + .5, 0, 12 * (negateZ ? -1 : 1) + .5);
-            case 3:
-                return location.add(-3 * (negateZ ? -1 : 1) + .5, 0, 12 * (negateZ ? -1 : 1) + .5);
-        }
+        Location originClone = origin.clone();
+        if (mirror)
+            originClone.setYaw(180);
 
-        throw new IllegalStateException("If this throws then i don't know what to tell you chief");
+        return new Location[]{
+                originClone.clone().add(9 * mirrorMult, 0, 9.5 * mirrorMult),
+                originClone.clone().add(-9 * mirrorMult, 0, 9.5 * mirrorMult),
+                originClone.clone().add(3 * mirrorMult, 0, 12.5 * mirrorMult),
+                originClone.clone().add(-3 * mirrorMult, 0, 12.5 * mirrorMult),
+        };
     }
 
     /**
-     * Turn on barriers that restrict players from moving
+     * Simply returns both team 1 and team 2 spawn locations
+     *
+     * @return an array of Locations representing ALL spawns
      */
-    public void enableBarriers() {
+    public Location[] getAllSpawnLocations() {
 
-        for (int i = 0; i < 8; i++) {
-            Location loc = getSpawnLocation(i, i >= 4);
+        // Grab the two sides' spawns
+        Location[] sideOne = getSpawnLocations(false);
+        Location[] sideTwo = getSpawnLocations(true);
 
-            // We need to add a barrier block 1 in every direction
-            loc.clone().add(1, 1, 0).getBlock().setType(Material.BARRIER);
-            loc.clone().add(0, 1, 1).getBlock().setType(Material.BARRIER);
-            loc.clone().add(-1, 1, 0).getBlock().setType(Material.BARRIER);
-            loc.clone().add(0, 1, -1).getBlock().setType(Material.BARRIER);
-        }
+        // Make a new array to store all the locations in together
+        Location[] allSpawns = new Location[sideOne.length + sideTwo.length];
+
+        // Copy the elements in
+        System.arraycopy(sideOne, 0, allSpawns, 0, sideOne.length);
+        System.arraycopy(sideTwo, 0, allSpawns, sideOne.length, sideTwo.length);
+
+        return allSpawns;
 
     }
 
-    public void disableBarriers() {
+    /**
+     * Gets a spawn location of the arena based on index of player
+     *
+     * @param i Index of the player we should spawn them at
+     * @param mirror Whether we should negate the Z coordinate, we do this if we want to get a spawn for the other side of the field
+     */
+    public Location getSpawnLocation(int i, boolean mirror) {
 
-        for (int i = 0; i < 8; i++) {
-            Location loc = getSpawnLocation(i, i >= 4);
+        Location[] spawns = getSpawnLocations(mirror);
+        int spawnIndex = i % spawns.length;
+        return spawns[spawnIndex];
 
+    }
+
+    /**
+     * Set the block type that blocks players in, typically either barrier or air
+     *
+     * @param material the block type to set
+     */
+    public void setSpawnBarrier(Material material) {
+
+        for (Location spawn : getAllSpawnLocations()) {
             // We need to add a barrier block 1 in every direction
-            loc.clone().add(1, 1, 0).getBlock().setType(Material.AIR);
-            loc.clone().add(0, 1, 1).getBlock().setType(Material.AIR);
-            loc.clone().add(-1, 1, 0).getBlock().setType(Material.AIR);
-            loc.clone().add(0, 1, -1).getBlock().setType(Material.AIR);
+            spawn.clone().add(1, 1, 0).getBlock().setType(material);
+            spawn.clone().add(0, 1, 1).getBlock().setType(material);
+            spawn.clone().add(-1, 1, 0).getBlock().setType(material);
+            spawn.clone().add(0, 1, -1).getBlock().setType(material);
         }
 
     }

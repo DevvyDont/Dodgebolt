@@ -14,8 +14,6 @@ import java.util.*;
 
 public class Team {
 
-    public static final int CAPACITY = 4;
-
     private String name;
     private ChatColor teamColor;
     private int score = 0;
@@ -78,10 +76,6 @@ public class Team {
         player.setDisplayName(ChatColor.DARK_GRAY + "[SPEC] " + ChatColor.stripColor(player.getName()));
         PlayerLeaveTeamEvent event = new PlayerLeaveTeamEvent(this, player);
         Dodgebolt.getPlugin(Dodgebolt.class).getServer().getPluginManager().callEvent(event);
-    }
-
-    public boolean isFull() {
-        return members.size() >= CAPACITY;
     }
 
     public void setScore(int score){

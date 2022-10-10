@@ -213,7 +213,7 @@ public class DodgeboltGame implements Listener {
         stadium.getArena().restoreArena();
 
         // Enable barriers
-        stadium.getArena().enableBarriers();
+        stadium.getArena().setSpawnBarrier(Material.BARRIER);
 
         // Tp the players to their spots
         for (Team team : new Team[]{team1, team2}) {
@@ -255,7 +255,8 @@ public class DodgeboltGame implements Listener {
 
         setState(DodgeboltGameState.INGAME);
 
-        stadium.getArena().disableBarriers();
+        // Take the barriers down
+        stadium.getArena().setSpawnBarrier(Material.AIR);
 
         for (Player player : Bukkit.getOnlinePlayers()) {
             player.playSound(player.getLocation(), Sound.BLOCK_ANVIL_DESTROY, 1, 1.5f);

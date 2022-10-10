@@ -30,8 +30,8 @@ public class TeamSwitchSign extends InteractableSign {
     public void update() {
         setLine(0, team.getTeamColor() + team.getName());
 
-        setLine(1, team.getMembers().size() + "/4");
-        setLine(3, team.isFull() ? "FULL!" : "Punch to join!");
+        setLine(1, team.getTeamColor().toString() + team.getMembers().size() + ChatColor.BLACK + " players");
+        setLine(3, "Punch to join!");
         updateSign();
     }
 
@@ -78,11 +78,6 @@ public class TeamSwitchSign extends InteractableSign {
 
         if (team.isMember(player)) {
             player.sendMessage(ChatColor.GRAY + "[" + ChatColor.YELLOW + "!" + ChatColor.GRAY + "] " + ChatColor.RED + "You are already on this team!");
-            return;
-        }
-
-        if (team.isFull()) {
-            player.sendMessage(ChatColor.GRAY + "[" + ChatColor.YELLOW + "!" + ChatColor.GRAY + "] " + ChatColor.RED + "That team is full!");
             return;
         }
 
