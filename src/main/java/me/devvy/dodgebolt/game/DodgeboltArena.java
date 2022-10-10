@@ -212,7 +212,7 @@ public class DodgeboltArena {
         int mirrorMult = mirror ? -1 : 1;
 
         Location originClone = origin.clone();
-        if (mirror)
+        if (!mirror)
             originClone.setYaw(180);
 
         return new Location[]{
