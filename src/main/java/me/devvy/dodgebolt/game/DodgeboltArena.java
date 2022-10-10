@@ -216,10 +216,13 @@ public class DodgeboltArena {
             originClone.setYaw(180);
 
         return new Location[]{
-                originClone.clone().add(9 * mirrorMult, 0, 9.5 * mirrorMult),
-                originClone.clone().add(-9 * mirrorMult, 0, 9.5 * mirrorMult),
-                originClone.clone().add(3 * mirrorMult, 0, 12.5 * mirrorMult),
-                originClone.clone().add(-3 * mirrorMult, 0, 12.5 * mirrorMult),
+                originClone.clone().add(-3 * mirrorMult, 0, 12 * mirrorMult + .5),  // Mid left circle
+                originClone.clone().add(3 * mirrorMult, 0, 12 * mirrorMult + .5),  // Mid right circle
+                originClone.clone().add(-9 * mirrorMult, 0, 9 * mirrorMult + .5),  // Far left circle
+                originClone.clone().add(9 * mirrorMult, 0, 9 * mirrorMult + .5),  // Far right circle
+                originClone.clone().add(0 * mirrorMult, 0, 14 * mirrorMult + .5),  // Mid backish
+                originClone.clone().add(7 * mirrorMult, 0, 14 * mirrorMult + .5),  // Mid backleftish
+                originClone.clone().add(-7 * mirrorMult, 0, 13 * mirrorMult + .5),  // Mid backrightish
         };
     }
 

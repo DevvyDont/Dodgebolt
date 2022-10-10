@@ -30,7 +30,7 @@ public class TeamSwitchSign extends InteractableSign {
     public void update() {
         setLine(0, team.getTeamColor() + team.getName());
 
-        setLine(1, team.getTeamColor().toString() + team.getMembers().size() + ChatColor.BLACK + " players");
+        setLine(1, team.getTeamColor().toString() + team.getMembers().size() + ChatColor.BLACK + " Player(s)");
         setLine(3, "Punch to join!");
         updateSign();
     }
