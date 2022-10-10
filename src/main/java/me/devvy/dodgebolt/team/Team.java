@@ -77,6 +77,13 @@ public class Team {
         Dodgebolt.getPlugin(Dodgebolt.class).getServer().getPluginManager().callEvent(event);
     }
 
+    public void clearPlayers() {
+        for (Player p : this.getMembersAsPlayers())
+            removePlayer(p);
+
+        members.clear();
+    }
+
     public void setScore(int score){
         this.score = score;
     }

@@ -65,10 +65,12 @@ public class DodgeboltGame implements Listener {
 
         state = DodgeboltGameState.WAITING;
 
-        new TeamSwitchSign(this, stadium.getSpawn().clone().add(-5, 0, 1), BlockFace.EAST, team1);
-        new TeamSwitchSign(this, stadium.getSpawn().clone().add(-5, 0, -1),BlockFace.EAST, team2);
-        new SpectatorSwitchSign(this, stadium.getSpawn().clone().add( -5, 0, 0), BlockFace.EAST);
-        new StartGameSign(this, stadium.getSpawn().clone().add(-5, 1, 0), BlockFace.EAST);
+        new TeamSwitchSign(this, stadium.getSpawn().clone().add(-2, 1, 1), BlockFace.EAST, team1);
+        new TeamSwitchSign(this, stadium.getSpawn().clone().add(-2, 1, -1),BlockFace.EAST, team2);
+        new SpectatorSwitchSign(this, stadium.getSpawn().clone().add( -2, 1, 0), BlockFace.EAST);
+        new StartGameSign(this, stadium.getSpawn().clone().add(-2, 2, 0), BlockFace.EAST);
+
+        new ShuffleTeamsSign(this, stadium.getSpawn().clone().add(-2, 2, -2), BlockFace.EAST);
 
         scoreboardManager = new MinecraftScoreboardManager(this);
         Dodgebolt.getPlugin(Dodgebolt.class).getServer().getPluginManager().registerEvents(scoreboardManager, Dodgebolt.getPlugin(Dodgebolt.class));
@@ -82,6 +84,42 @@ public class DodgeboltGame implements Listener {
             player.setAllowFlight(true);
             player.teleport(stadium.getSpawn());
             player.setGameMode(GameMode.SURVIVAL);
+        }
+    }
+
+    public void shuffleTeams(boolean includeSpectators) {
+        List<Player> activePlayerPool = new ArrayList<>();
+
+        for (Player player : Bukkit.getOnlinePlayers()) {
+
+            boolean hasTeam = getPlayerTeam(player) != null;
+
+            // If this person is in creative or spectator mode and not on a team, ignore them no matter what
+            if (player.getGameMode().equals(GameMode.CREATIVE) || player.getGameMode().equals(GameMode.SPECTATOR) && !hasTeam)
+                continue;
+
+            // If we ignore spectators and this person doesn't have a team, ignore this person
+            if (!includeSpectators && !hasTeam)
+                continue;
+
+            activePlayerPool.add(player);
+        }
+
+        team1.clearPlayers();
+        team2.clearPlayers();
+
+        // Edge case, nobody here?
+        if (activePlayerPool.isEmpty())
+            return;
+
+        Collections.shuffle(activePlayerPool);
+
+        // Iterate til half and set to team 1, other half team 2
+        int partition = activePlayerPool.size() / 2;
+
+        for (int i = 0; i < activePlayerPool.size(); i++) {
+            Team t = i < partition ? team2 : team1;
+            t.addPlayer(activePlayerPool.get(i));
         }
     }
 
@@ -652,8 +690,5 @@ public class DodgeboltGame implements Listener {
         if (event.getBlock().getType() == Material.LAVA)
             event.setCancelled(true);
     }
-
-
-
 
 }

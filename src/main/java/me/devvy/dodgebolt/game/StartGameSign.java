@@ -11,7 +11,7 @@ public class StartGameSign extends InteractableSign {
 
     public StartGameSign(DodgeboltGame game, Location location, BlockFace direction) {
         super(game, location, direction);
-        setLine(1, ChatColor.GREEN + "Start!", true);
+        setLine(1, ChatColor.GREEN + "Start Game!", true);
     }
 
     @Override

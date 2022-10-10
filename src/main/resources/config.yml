@@ -1,5 +1,7 @@
 # Should only server operators be allowed to start the game?
 op-start-game: true
+# Should only server operators be allowed to change settings on the signs?
+op-change-settings: true
 # Should only server operators be allowed to shift click team signs to change colors?
 op-change-color: false
 # How many rounds should a team have to win to win the entire game? Note win by 2 rule will still add rounds after this

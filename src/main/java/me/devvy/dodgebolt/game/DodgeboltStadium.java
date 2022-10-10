@@ -38,7 +38,7 @@ public class DodgeboltStadium {
 
     public DodgeboltStadium(Location origin) {
         this.origin = origin;
-        this.spawn = origin.clone().add(0, 6, 0);
+        this.spawn = origin.clone().add(-18, 6, 0);
         this.spawn.setYaw(90);
         this.origin.getWorld().setDifficulty(Difficulty.PEACEFUL);
         this.arena = new DodgeboltArena(origin);

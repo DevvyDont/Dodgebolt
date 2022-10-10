@@ -7,6 +7,7 @@ import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.Sign;
 import org.bukkit.block.data.Rotatable;
+import org.bukkit.block.data.type.WallSign;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -33,15 +34,18 @@ public abstract class InteractableSign implements Listener {
     public void setLocation(Location location) {
         this.location.getBlock().setType(Material.AIR);
         this.location = location;
-        location.getBlock().setType(Material.OAK_SIGN);
+        location.getBlock().setType(Material.OAK_WALL_SIGN);
         setDirection(direction);
     }
 
     public void setDirection(BlockFace direction) {
-        this.direction = direction;
-        Rotatable signData = (Rotatable)location.getBlock().getBlockData();
-        signData.setRotation(direction);
-        location.getBlock().setBlockData(signData);
+        Sign signState = (Sign) location.getBlock().getState();
+        WallSign wallSignData = (WallSign) signState.getBlockData();
+        wallSignData.setFacing(direction);
+        signState.setBlockData(wallSignData);
+        location.getBlock().setBlockData(signState.getBlockData());
+        signState.update();
+
     }
 
 
@@ -65,7 +69,7 @@ public abstract class InteractableSign implements Listener {
                 sign.setLine(i, lines[i]);
             sign.update();
         } catch (ClassCastException ignored) {
-            location.getBlock().setType(Material.OAK_SIGN);
+            location.getBlock().setType(Material.OAK_WALL_SIGN);
             updateSign();
         }
     }
