@@ -84,6 +84,7 @@ public class DodgeboltGame implements Listener {
             player.setAllowFlight(true);
             player.teleport(stadium.getSpawn());
             player.setGameMode(GameMode.SURVIVAL);
+            setSpectating(player);
         }
     }
 
@@ -180,7 +181,12 @@ public class DodgeboltGame implements Listener {
     public void setSpectating(Player player) {
         getTeam2().removePlayer(player);
         getTeam1().removePlayer(player);
-        player.setDisplayName(ChatColor.DARK_GRAY + "[SPEC] " + ChatColor.stripColor(player.getName()));
+
+        if (player.isOp())
+            player.setDisplayName(ChatColor.DARK_GRAY + "[" + ChatColor.DARK_RED + "ADMIN" + ChatColor.DARK_GRAY + "] " + ChatColor.RED + ChatColor.stripColor(player.getName()));
+        else
+            player.setDisplayName(ChatColor.DARK_GRAY + "[SPEC] " + ChatColor.GRAY + ChatColor.stripColor(player.getName()));
+
     }
 
     public DodgeboltGameState getState() {

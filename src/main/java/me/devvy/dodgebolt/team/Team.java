@@ -72,7 +72,6 @@ public class Team {
         if (!members.remove(player.getUniqueId()))
             return;
 
-        player.setDisplayName(ChatColor.DARK_GRAY + "[SPEC] " + ChatColor.stripColor(player.getName()));
         PlayerLeaveTeamEvent event = new PlayerLeaveTeamEvent(this, player);
         Dodgebolt.getPlugin(Dodgebolt.class).getServer().getPluginManager().callEvent(event);
     }

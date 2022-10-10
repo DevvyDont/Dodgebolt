@@ -23,6 +23,7 @@ public class MinecraftScoreboardManager implements Listener {
     org.bukkit.scoreboard.Team team1ScoreboardTeam;
     org.bukkit.scoreboard.Team team2ScoreboardTeam;
     org.bukkit.scoreboard.Team spectatorScoreboardTeam;
+    org.bukkit.scoreboard.Team adminScoreboardTeam;
 
     org.bukkit.scoreboard.Team sidebarLineCurrRound;
     Score blankLine;
@@ -41,11 +42,15 @@ public class MinecraftScoreboardManager implements Listener {
         team1ScoreboardTeam = scoreboard.registerNewTeam("one");
         team2ScoreboardTeam = scoreboard.registerNewTeam("two");
         spectatorScoreboardTeam = scoreboard.registerNewTeam("spec");
+        adminScoreboardTeam = scoreboard.registerNewTeam("admin");
 
         team1ScoreboardTeam.setAllowFriendlyFire(true);
         team2ScoreboardTeam.setAllowFriendlyFire(true);
 
-        spectatorScoreboardTeam.setPrefix(ChatColor.GRAY + "[SPEC] ");
+        spectatorScoreboardTeam.setPrefix(ChatColor.DARK_GRAY + "[SPEC] ");
+        spectatorScoreboardTeam.setColor(ChatColor.GRAY);
+        adminScoreboardTeam.setPrefix(ChatColor.DARK_GRAY + "[" + ChatColor.DARK_RED + "ADMIN" + ChatColor.DARK_GRAY + "] ");
+        adminScoreboardTeam.setColor(ChatColor.RED);
 
         sidebar = scoreboard.registerNewObjective("dummy", "dummy", ChatColor.AQUA + "Dodgebolt");
 
@@ -78,7 +83,11 @@ public class MinecraftScoreboardManager implements Listener {
 
         for (Player player : Bukkit.getOnlinePlayers()) {
             player.setScoreboard(scoreboard);
-            spectatorScoreboardTeam.addEntry(player.getName());
+
+            if (player.isOp())
+                adminScoreboardTeam.addEntry(player.getName());
+            else
+                spectatorScoreboardTeam.addEntry(player.getName());
         }
 
         delayedUpdate();
@@ -202,7 +211,11 @@ public class MinecraftScoreboardManager implements Listener {
         event.getPlayer().setScoreboard(scoreboard);
         team1ScoreboardTeam.removeEntry(event.getPlayer().getName());
         team2ScoreboardTeam.removeEntry(event.getPlayer().getName());
-        spectatorScoreboardTeam.addEntry(event.getPlayer().getName());
+
+        if (event.getPlayer().isOp())
+            adminScoreboardTeam.addEntry(event.getPlayer().getName());
+        else
+            spectatorScoreboardTeam.addEntry(event.getPlayer().getName());
     }
 
     @EventHandler
@@ -210,13 +223,19 @@ public class MinecraftScoreboardManager implements Listener {
 
         team1ScoreboardTeam.removeEntry(event.getPlayer().getName());
         team2ScoreboardTeam.removeEntry(event.getPlayer().getName());
-        spectatorScoreboardTeam.addEntry(event.getPlayer().getName());
+
+        if (event.getPlayer().isOp())
+            adminScoreboardTeam.addEntry(event.getPlayer().getName());
+        else
+            spectatorScoreboardTeam.addEntry(event.getPlayer().getName());
     }
 
     @EventHandler
     public void onPlayerJoinTeam(PlayerJoinTeamEvent event) {
 
         spectatorScoreboardTeam.removeEntry(event.getPlayer().getName());
+        adminScoreboardTeam.removeEntry(event.getPlayer().getName());
+
         if (event.getTeam() == game.getTeam1())
             team1ScoreboardTeam.addEntry(event.getPlayer().getName());
         else if (event.getTeam() == game.getTeam2())
