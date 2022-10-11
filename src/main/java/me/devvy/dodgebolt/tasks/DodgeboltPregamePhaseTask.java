@@ -23,10 +23,6 @@ public class DodgeboltPregamePhaseTask extends DodgeboltPhaseTask {
     }
 
     private boolean inOvertime() {
-//        System.out.println(game.getTeam1().getScore());
-//        System.out.println(game.getTeam2().getScore());
-//        System.out.println(game.getTeam1().getScore() - 1);
-//        System.out.println(game.getStartingRoundsToWin());
         return game.getTeam1().getScore() == game.getTeam2().getScore() && game.getTeam1().getScore() + 1 >= game.getStartingRoundsToWin();
     }
 

@@ -391,14 +391,14 @@ public class DodgeboltGame implements Listener {
             loser.sendTitle(String.format("%s%sFLAWLESS", ChatColor.RED, ChatColor.BOLD), String.format("%sTeam %s%s %sall stayed alive!", ChatColor.GRAY, winner.getTeamColor(), winner.getName(), ChatColor.GRAY), 10, 100, 40);
         } else if (roundStatistics.teamClutched(winner)) {
             // Announce a clutch win
-            Bukkit.broadcastMessage(String.format("%s[%s!%s] %s%s %sclutched and won the round for %s%s%s!", ChatColor.GRAY, ChatColor.YELLOW, ChatColor.GRAY, winner.getTeamColor(), winner.getPlayersAlive().iterator().next(), ChatColor.GRAY, winner.getTeamColor(), winner.getName(), ChatColor.GRAY));
+            Bukkit.broadcastMessage(String.format("%s[%s!%s] %s%s %sclutched and won the round for %s%s%s!", ChatColor.GRAY, ChatColor.YELLOW, ChatColor.GRAY, winner.getTeamColor(), winner.getPlayersAlive().iterator().next().getName(), ChatColor.GRAY, winner.getTeamColor(), winner.getName(), ChatColor.GRAY));
             winner.playSound(Sound.ENTITY_VILLAGER_CELEBRATE, .75f,1);
             playSoundToSpectators(Sound.ENTITY_VILLAGER_CELEBRATE, .75f,1);
             loser.playSound(Sound.ENTITY_ENDERMAN_DEATH, .75f, 1.5f);
 
-            winner.sendTitle(String.format("%s%sCLUTCH", ChatColor.GREEN, ChatColor.BOLD), String.format("%s%s %swon the round!", winner.getTeamColor(), winner.getPlayersAlive().iterator().next(), ChatColor.GRAY), 10, 100, 40);
-            sendTitleToSpectators(String.format("%s%sCLUTCH", ChatColor.GREEN, ChatColor.BOLD), String.format("%s%s %swon the round!", winner.getTeamColor(), winner.getPlayersAlive().iterator().next(), ChatColor.GRAY), 10, 100, 40);
-            loser.sendTitle(String.format("%s%sCLUTCH", ChatColor.RED, ChatColor.BOLD), String.format("%s%s %swon the round!", winner.getTeamColor(), winner.getPlayersAlive().iterator().next(), ChatColor.GRAY), 10, 100, 40);
+            winner.sendTitle(String.format("%s%sCLUTCH", ChatColor.GREEN, ChatColor.BOLD), String.format("%s%s %swon the round!", winner.getTeamColor(), winner.getPlayersAlive().iterator().next().getName(), ChatColor.GRAY), 10, 100, 40);
+            sendTitleToSpectators(String.format("%s%sCLUTCH", ChatColor.GREEN, ChatColor.BOLD), String.format("%s%s %swon the round!", winner.getTeamColor(), winner.getPlayersAlive().iterator().next().getName(), ChatColor.GRAY), 10, 100, 40);
+            loser.sendTitle(String.format("%s%sCLUTCH", ChatColor.RED, ChatColor.BOLD), String.format("%s%s %swon the round!", winner.getTeamColor(), winner.getPlayersAlive().iterator().next().getName(), ChatColor.GRAY), 10, 100, 40);
         } else {
             // Announce a normal round win
             Bukkit.broadcastMessage(String.format("%s[%s!%s] %s%s %swon the round!", ChatColor.GRAY, ChatColor.YELLOW, ChatColor.GRAY, winner.getTeamColor(), winner.getName(), ChatColor.GRAY));
