@@ -181,11 +181,7 @@ public class DodgeboltGame implements Listener {
     public void setSpectating(Player player) {
         getTeam2().removePlayer(player);
         getTeam1().removePlayer(player);
-
-        if (player.isOp())
-            player.setDisplayName(ChatColor.DARK_GRAY + "[" + ChatColor.DARK_RED + "ADMIN" + ChatColor.DARK_GRAY + "] " + ChatColor.RED + ChatColor.stripColor(player.getName()));
-        else
-            player.setDisplayName(ChatColor.DARK_GRAY + "[SPEC] " + ChatColor.GRAY + ChatColor.stripColor(player.getName()));
+        scoreboardManager.setSpectatingCosmetics(player);
 
     }
 
@@ -259,17 +255,26 @@ public class DodgeboltGame implements Listener {
         // Enable barriers
         stadium.getArena().setSpawnBarrier(Material.BARRIER);
 
+        // Teleport players to their spawns and give them necessary gear
+        toStartingPositions();
+
+        // Create a task to start the game
+        currentPhaseTask = new DodgeboltPregamePhaseTask(this);
+        currentPhaseTask.runTaskTimer(Dodgebolt.getPlugin(Dodgebolt.class), 0, DodgeboltPregamePhaseTask.PERIOD);
+    }
+
+    /**
+     * Tps all active players to their spawns right before a round starts
+     */
+    public void toStartingPositions() {
+
         // Tp the players to their spots
         for (Team team : new Team[]{team1, team2}) {
 
-            if (team.getMembersAsPlayers().isEmpty()) {
-                endGame();
-                return;
-            }
-
-            int i = 0;
+            int spawnIndex = 0;
             for (Player player : team.getMembersAsPlayers()) {
-                Location spawn = stadium.getArena().getSpawnLocation(i, team == team2);
+                Location spawn = stadium.getArena().getSpawnLocation(spawnIndex, team == team2);
+                spawnIndex++;
 
                 if (player.isDead())
                     player.spigot().respawn();
@@ -279,14 +284,11 @@ public class DodgeboltGame implements Listener {
                 player.setInvulnerable(false);
                 player.getInventory().clear();
                 player.teleport(spawn);
-                i++;
                 player.setGlowing(true);
                 givePlayerKit(player);
             }
         }
 
-        currentPhaseTask = new DodgeboltPregamePhaseTask(this);
-        currentPhaseTask.runTaskTimer(Dodgebolt.getPlugin(Dodgebolt.class), 0, DodgeboltPregamePhaseTask.PERIOD);
     }
 
     public void exitPregamePhase() {
@@ -364,12 +366,16 @@ public class DodgeboltGame implements Listener {
         arrowSpawners.delete();
         arrowSpawners = null;
 
+        // If one of the teams hit the score limit end the game
         if (team1.getScore() >= roundsToWin || team2.getScore() >= roundsToWin) {
             endGame();
-        } else {
-            currentPhaseTask = new DodgeboltIntermissionPhaseTask(this);
-            currentPhaseTask.runTaskTimer(Dodgebolt.getPlugin(Dodgebolt.class), 1, DodgeboltIntermissionPhaseTask.PERIOD);
+            return;
         }
+
+        // Otherwise start up a new round later
+        currentPhaseTask = new DodgeboltIntermissionPhaseTask(this);
+        currentPhaseTask.runTaskTimer(Dodgebolt.getPlugin(Dodgebolt.class), 1, DodgeboltIntermissionPhaseTask.PERIOD);
+
     }
 
     public void exitIntermissionPhase() {
@@ -380,52 +386,20 @@ public class DodgeboltGame implements Listener {
 
     public void endGame() {
 
-        for (Player p : Bukkit.getOnlinePlayers())
-            p.getInventory().clear();
-
-        if (team1.getScore() == team2.getScore()) {
-
-            for (Player player : Bukkit.getOnlinePlayers()) {
-                player.sendTitle(ChatColor.GRAY + "DRAW!", ChatColor.WHITE + "Nobody wins today :/", 10, 80, 40);
-                player.playSound(player.getEyeLocation(), Sound.BLOCK_BEACON_DEACTIVATE, 1, .5f);
-            }
-
-
-        } else {
-
-            Team winner = team1.getScore() > team2.getScore() ? team1 : team2;
-            for (Player winningPlayer : winner.getMembersAsPlayers()) {
-                winningPlayer.playSound(winningPlayer.getEyeLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, .75f, 1);
-                winningPlayer.sendTitle(ChatColor.GREEN + "VICTORY", winner.getTeamColor() + winner.getName() + ChatColor.GRAY + " won the game!", 10, 80, 40);
-                PlayerStats.addPlayerWins(winningPlayer);
-                Items.equipWinnerCrown(winningPlayer);
-            }
-
-            for (Player losingPlayer : getOpposingTeam(winner).getMembersAsPlayers()) {
-                losingPlayer.playSound(losingPlayer.getEyeLocation(), Sound.ENTITY_WITHER_DEATH, .8f, 1);
-                losingPlayer.sendTitle(ChatColor.DARK_RED + "DEFEAT", winner.getTeamColor() + winner.getName() + ChatColor.GRAY + " won the game!", 10, 80, 40);
-            }
-
-            for (Player spectator : Bukkit.getOnlinePlayers()) {
-                if (getPlayerTeam(spectator) != null)
-                    continue;
-
-                spectator.playSound(spectator.getEyeLocation(), Sound.ENTITY_ENDER_DRAGON_DEATH, .5f, 1);
-                spectator.sendTitle(ChatColor.AQUA + "GAME OVER", winner.getTeamColor() + winner.getName() + ChatColor.GRAY + " won the game!", 10, 80, 40);
-            }
-
-        }
-
+        // Clear everyones inventories and let them roam around a bit
         for (Player player : Bukkit.getOnlinePlayers()) {
+            player.getInventory().clear();
             player.setGameMode(GameMode.SURVIVAL);
             player.setInvulnerable(true);
             player.setAllowFlight(true);
         }
 
-        for (Entity entity : stadium.getOrigin().getWorld().getEntities())
-            if (entity instanceof Item || entity instanceof Arrow)
-                entity.remove();
+        // Tell everyone the results
+        announceMatchResults();
 
+        removeArrowEntities();
+
+        // Make a task that will respawn everybody atspawn and restore the game
         new BukkitRunnable() {
             @Override
             public void run() {
@@ -435,18 +409,78 @@ public class DodgeboltGame implements Listener {
                     if (player.isDead())
                         player.spigot().respawn();
 
-                    setSpectating(player);
-                    player.teleport(stadium.getSpawn().clone().add(Math.random() - .5, 0, Math.random() - .5));
+                    player.teleport(stadium.getSpawn().clone().add(Math.random()*2 - .5, 0, Math.random()*2 - .5));
                 }
 
-                team1.setScore(0);
-                team2.setScore(0);
-                setRoundsToWin(startingRoundsToWin);
-                stadium.getArena().restoreArena();
-                setState(DodgeboltGameState.WAITING);
+                reset();
 
             }
         }.runTaskLater(Dodgebolt.getPlugin(Dodgebolt.class), 120);
+    }
+
+    /**
+     * Called when a match is over. Do things such as announce the winner, give people their crowns, update
+     * the scoreboard etc
+     */
+    public void announceMatchResults() {
+
+        // Handle a draw
+        if (team1.getScore() == team2.getScore()) {
+
+            // Announce the entire server that nobody won and do nothing
+            for (Player player : Bukkit.getOnlinePlayers()) {
+                player.sendTitle(ChatColor.GRAY + "DRAW!", ChatColor.WHITE + "Nobody wins today :/", 10, 80, 40);
+                player.playSound(player.getEyeLocation(), Sound.BLOCK_BEACON_DEACTIVATE, 1, .5f);
+            }
+
+            return;
+        }
+
+        // Figure out the winner
+        Team winner = team1.getScore() > team2.getScore() ? team1 : team2;
+
+        // Loop through the winning players and tell them they won and give them crowns
+        for (Player winningPlayer : winner.getMembersAsPlayers()) {
+            winningPlayer.playSound(winningPlayer.getEyeLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, .75f, 1);
+            winningPlayer.sendTitle(ChatColor.GREEN + "VICTORY", winner.getTeamColor() + winner.getName() + ChatColor.GRAY + " won the game!", 10, 80, 40);
+            PlayerStats.addPlayerWins(winningPlayer);
+            Items.equipWinnerCrown(winningPlayer);
+        }
+
+        // Loop through the losers and tell them they lost
+        for (Player losingPlayer : getOpposingTeam(winner).getMembersAsPlayers()) {
+            losingPlayer.playSound(losingPlayer.getEyeLocation(), Sound.ENTITY_WITHER_DEATH, .8f, 1);
+            losingPlayer.sendTitle(ChatColor.DARK_RED + "DEFEAT", winner.getTeamColor() + winner.getName() + ChatColor.GRAY + " won the game!", 10, 80, 40);
+        }
+
+        // Loop through everybody else on the server and tell them who won
+        for (Player spectator : Bukkit.getOnlinePlayers()) {
+            if (getPlayerTeam(spectator) != null)
+                continue;
+
+            spectator.playSound(spectator.getEyeLocation(), Sound.ENTITY_ENDER_DRAGON_DEATH, .5f, 1);
+            spectator.sendTitle(ChatColor.AQUA + "GAME OVER", winner.getTeamColor() + winner.getName() + ChatColor.GRAY + " won the game!", 10, 80, 40);
+        }
+
+
+    }
+
+    public void removeArrowEntities() {
+        for (Entity entity : stadium.getOrigin().getWorld().getEntities())
+            if (entity instanceof Item || entity instanceof Arrow)
+                entity.remove();
+    }
+
+    /**
+     * Sets score to 0, clean stuff up etc
+     */
+    public void reset() {
+        team1.setScore(0);
+        team2.setScore(0);
+        setRoundsToWin(startingRoundsToWin);
+        stadium.getArena().restoreArena();
+        removeArrowEntities();
+        setState(DodgeboltGameState.WAITING);
     }
 
     public void cleanup() {

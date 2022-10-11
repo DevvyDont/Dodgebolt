@@ -83,11 +83,7 @@ public class MinecraftScoreboardManager implements Listener {
 
         for (Player player : Bukkit.getOnlinePlayers()) {
             player.setScoreboard(scoreboard);
-
-            if (player.isOp())
-                adminScoreboardTeam.addEntry(player.getName());
-            else
-                spectatorScoreboardTeam.addEntry(player.getName());
+            setSpectatingCosmetics(player);
         }
 
         delayedUpdate();
@@ -98,6 +94,23 @@ public class MinecraftScoreboardManager implements Listener {
                 updateSidebar();
             }
         }.runTaskTimer(Dodgebolt.getPlugin(Dodgebolt.class), 5, 20);
+    }
+
+    /**
+     * Gives a player the spectator tag as well as update their chat identity and colors
+     *
+     * @param player The player that wants spectating cosmetics
+     */
+    public void setSpectatingCosmetics(Player player) {
+
+        if (player.isOp()) {
+            adminScoreboardTeam.addEntry(player.getName());
+            player.setDisplayName(ChatColor.DARK_GRAY + "[" + ChatColor.DARK_RED + "ADMIN" + ChatColor.DARK_GRAY + "] " + ChatColor.RED + ChatColor.stripColor(player.getName()));
+        } else {
+            spectatorScoreboardTeam.addEntry(player.getName());
+            player.setDisplayName(ChatColor.DARK_GRAY + "[SPEC] " + ChatColor.GRAY + ChatColor.stripColor(player.getName()));
+        }
+
     }
 
     private void delayedUpdate() {
@@ -138,7 +151,7 @@ public class MinecraftScoreboardManager implements Listener {
             suffix.append("✕ ");
 
         if (team.getScore() < game.getRoundsToWin())
-            suffix.append(ChatColor.GRAY).append(ChatColor.BOLD.toString());
+            suffix.append(ChatColor.GRAY).append(ChatColor.BOLD);
 
         for (int i = team.getScore(); i < game.getRoundsToWin(); i++)
             suffix.append("✕ ");
@@ -212,10 +225,7 @@ public class MinecraftScoreboardManager implements Listener {
         team1ScoreboardTeam.removeEntry(event.getPlayer().getName());
         team2ScoreboardTeam.removeEntry(event.getPlayer().getName());
 
-        if (event.getPlayer().isOp())
-            adminScoreboardTeam.addEntry(event.getPlayer().getName());
-        else
-            spectatorScoreboardTeam.addEntry(event.getPlayer().getName());
+        setSpectatingCosmetics(event.getPlayer());
     }
 
     @EventHandler
@@ -224,10 +234,7 @@ public class MinecraftScoreboardManager implements Listener {
         team1ScoreboardTeam.removeEntry(event.getPlayer().getName());
         team2ScoreboardTeam.removeEntry(event.getPlayer().getName());
 
-        if (event.getPlayer().isOp())
-            adminScoreboardTeam.addEntry(event.getPlayer().getName());
-        else
-            spectatorScoreboardTeam.addEntry(event.getPlayer().getName());
+        setSpectatingCosmetics(event.getPlayer());
     }
 
     @EventHandler
