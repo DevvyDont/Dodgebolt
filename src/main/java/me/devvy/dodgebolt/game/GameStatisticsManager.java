@@ -1,6 +1,7 @@
 package me.devvy.dodgebolt.game;
 
 import me.devvy.dodgebolt.Dodgebolt;
+import me.devvy.dodgebolt.hologram.PlayerEntry;
 import me.devvy.dodgebolt.team.Team;
 import org.bukkit.entity.Player;
 
@@ -65,6 +66,13 @@ public class GameStatisticsManager {
         playerToArrowsFiredMap.clear();
         playerToDeathsMap.clear();
         roundTimeline.clear();
+    }
+
+    public PlayerEntry getPlayerStatistics(UUID uuid) {
+        return new PlayerEntry(uuid,
+                playerToKillsMap.getOrDefault(uuid, 0),
+                playerToDeathsMap.getOrDefault(uuid, 0),
+                playerToArrowsFiredMap.getOrDefault(uuid, 0));
     }
 
 

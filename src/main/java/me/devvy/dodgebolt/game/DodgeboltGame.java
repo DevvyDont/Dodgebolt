@@ -2,6 +2,7 @@ package me.devvy.dodgebolt.game;
 
 import me.devvy.dodgebolt.Dodgebolt;
 import me.devvy.dodgebolt.events.TeamColorChangeEvent;
+import me.devvy.dodgebolt.hologram.HolographicDynamicScoreboard;
 import me.devvy.dodgebolt.map.DodgeboltStadium;
 import me.devvy.dodgebolt.signs.ShuffleTeamsSign;
 import me.devvy.dodgebolt.signs.SpectatorSwitchSign;
@@ -32,6 +33,7 @@ import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.util.Vector;
 
 import java.util.*;
 
@@ -48,6 +50,8 @@ public class DodgeboltGame implements Listener {
     private final MinecraftScoreboardManager scoreboardManager;
 
     private final GameStatisticsManager gameStatisticsManager;
+
+    private HolographicDynamicScoreboard mainHoloScoreboard;
 
     private int startingRoundsToWin;
     private int roundsToWin;
@@ -94,6 +98,8 @@ public class DodgeboltGame implements Listener {
             player.setGameMode(GameMode.SURVIVAL);
             setSpectating(player);
         }
+
+        mainHoloScoreboard = new HolographicDynamicScoreboard(gameStatisticsManager, stadium.getOrigin().clone().add(0, 10, 0));
     }
 
     public void shuffleTeams(boolean includeSpectators) {
@@ -238,6 +244,16 @@ public class DodgeboltGame implements Listener {
         getTeam2().setScore(0);
 
         gameStatisticsManager.clear();
+        mainHoloScoreboard.hide();
+        mainHoloScoreboard.clearPlayers();
+
+        // Track all players for the scoreboard
+        for (Player p : getTeam1().getMembersAsPlayers())
+            mainHoloScoreboard.trackPlayer(p.getUniqueId());
+        for (Player p : getTeam2().getMembersAsPlayers())
+            mainHoloScoreboard.trackPlayer(p.getUniqueId());
+
+        mainHoloScoreboard.update();
 
         startNewRound();
     }
@@ -422,6 +438,7 @@ public class DodgeboltGame implements Listener {
 
         // Give the winners a point
         winner.setScore(winner.getScore() + 1);
+        mainHoloScoreboard.update();
 
         // Win by 2 rule? if both teams are on match point
         if (Dodgebolt.getPlugin(Dodgebolt.class).getConfig().getBoolean(ConfigManager.WIN_BY_2)) {
@@ -487,7 +504,7 @@ public class DodgeboltGame implements Listener {
                     if (player.isDead())
                         player.spigot().respawn();
 
-                    player.teleport(stadium.getSpawn().clone().add(Math.random()*2 - .5, 0, Math.random()*2 - .5));
+                    player.teleport(stadium.getSpawn().clone().add(Math.random()*2 + 10.5, 0, Math.random()*2 - .5).setDirection(new Vector(180, 0, 0)));
                 }
 
                 reset();
@@ -643,6 +660,7 @@ public class DodgeboltGame implements Listener {
 
         // Keep track for game stats, if killer is null its a suicide so player killed player otherwise killer is killer
         gameStatisticsManager.registerKill(killer == null ? player : killer, player);
+        mainHoloScoreboard.update();
 
         for (Player otherPlayers : Bukkit.getOnlinePlayers()) {
 
@@ -759,6 +777,7 @@ public class DodgeboltGame implements Listener {
 
         PlayerStats.addArrowsFired((Player) event.getEntity());
         gameStatisticsManager.registerArrowShot(((Player) event.getEntity()));
+        mainHoloScoreboard.update();
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
