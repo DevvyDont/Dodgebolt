@@ -1,8 +1,10 @@
-package me.devvy.dodgebolt.game;
+package me.devvy.dodgebolt.signs;
 
 import me.devvy.dodgebolt.Dodgebolt;
 import me.devvy.dodgebolt.events.PlayerJoinTeamEvent;
 import me.devvy.dodgebolt.events.PlayerLeaveTeamEvent;
+import me.devvy.dodgebolt.game.DodgeboltGame;
+import me.devvy.dodgebolt.game.DodgeboltGameState;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;

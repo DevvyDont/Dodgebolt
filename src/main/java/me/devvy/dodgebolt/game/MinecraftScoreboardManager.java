@@ -131,7 +131,7 @@ public class MinecraftScoreboardManager implements Listener {
 
     public void updateSidebar() {
         sidebarLineCurrRound.setPrefix(ChatColor.YELLOW + ChatColor.BOLD.toString() + "Current Round: ");
-        sidebarLineCurrRound.setSuffix(ChatColor.WHITE.toString() + (game.getState() == DodgeboltGameState.WAITING ? 0 : (Math.min(game.getTeam1().getScore() + game.getTeam2().getScore() + 1, game.getRoundsToWin() * 2 -2))) + "/" + (game.getRoundsToWin() * 2 - 2));
+        sidebarLineCurrRound.setSuffix(ChatColor.WHITE.toString() + (game.getState() == DodgeboltGameState.WAITING ? 0 : (Math.min(game.getTeam1().getScore() + game.getTeam2().getScore() + 1, game.getRoundsToWin() * 2 -2))) + "/" + (game.getRoundsToWin() * 2 - 1));
         sidebarLineTeam1ScoreLabel.setPrefix(game.getTeam1().getTeamColor() + teamColorToCallsign(game.getTeam1().getTeamColor()) + game.getTeam1().getName());
         sidebarLineTeam2ScoreLabel.setPrefix(game.getTeam2().getTeamColor() + teamColorToCallsign(game.getTeam2().getTeamColor()) + game.getTeam2().getName());
 

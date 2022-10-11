@@ -7,6 +7,8 @@ import me.devvy.dodgebolt.events.TeamColorChangeEvent;
 import me.devvy.dodgebolt.util.ColorTranslator;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Location;
+import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 
 import java.util.*;
@@ -55,6 +57,16 @@ public class Team {
         return buffer;
     }
 
+    public Collection<Player> getPlayersAlive() {
+        List<Player> alive = new ArrayList<>();
+
+        for (Player member : getMembersAsPlayers())
+            if (!elimTracker.isDead(member))
+                alive.add(member);
+
+        return alive;
+    }
+
     public boolean isMember(Player player) {
         return members.contains(player.getUniqueId());
     }
@@ -97,5 +109,24 @@ public class Team {
 
     public void setElimTracker(TeamElimTracker elimTracker) {
         this.elimTracker = elimTracker;
+    }
+
+    /**
+     * Sends a title to all players on this team, similarly to just calling it on a player
+     *
+     * @param title
+     * @param subtitle
+     * @param fadeIn
+     * @param stay
+     * @param fadeOut
+     */
+    public void sendTitle(String title, String subtitle, int fadeIn, int stay, int fadeOut) {
+        for (Player player : getMembersAsPlayers())
+            player.sendTitle(title, subtitle, fadeIn, stay, fadeOut);
+    }
+
+    public void playSound(Sound sound, float volume, float pitch) {
+        for (Player player : getMembersAsPlayers())
+            player.playSound(player.getEyeLocation(), sound, volume, pitch);
     }
 }

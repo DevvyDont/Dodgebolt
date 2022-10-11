@@ -21,11 +21,11 @@ public class ConfigManager {
         cfg.addDefault(OP_START_GAME, true);  // Require ops to start the game? Useful for private servers
         cfg.addDefault(OP_CHANGE_SETTINGS, true);  // Require ops to change settings during the game? Useful for private servers
         cfg.addDefault(OP_CHANGE_COLOR, false);  // Require ops to change the team color? Useful for private servers
-        cfg.addDefault(ROUND_WIN_LIMIT, 3);  // How many rounds do we have to win to win the entire game? Note that the win by 2 rule will still add more rounds if necessary
+        cfg.addDefault(ROUND_WIN_LIMIT, 5);  // How many rounds do we have to win to win the entire game? Note that the win by 2 rule will still add more rounds if necessary
         cfg.addDefault(WIN_BY_2, true);  // Should we require a team to win by 2 rounds? kinda like tennis
 
         cfg.options().copyDefaults(true);
-        plugin.saveConfig();
+        plugin.saveDefaultConfig();
 
 
     }

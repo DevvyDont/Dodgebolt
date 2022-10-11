@@ -2,9 +2,7 @@ package me.devvy.dodgebolt.team;
 
 import org.bukkit.entity.Player;
 
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 public class TeamElimTracker {
 
@@ -28,4 +26,11 @@ public class TeamElimTracker {
         return deathsNeeded - deadPlayers.size();
     }
 
+    public boolean nobodyIsDead() {
+        return deadPlayers.isEmpty();
+    }
+
+    public boolean isDead(Player player) {
+        return deadPlayers.contains(player.getUniqueId());
+    }
 }

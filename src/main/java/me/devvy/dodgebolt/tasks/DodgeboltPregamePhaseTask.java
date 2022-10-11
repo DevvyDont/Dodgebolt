@@ -1,6 +1,7 @@
 package me.devvy.dodgebolt.tasks;
 
 import me.devvy.dodgebolt.game.DodgeboltGame;
+import me.devvy.dodgebolt.util.ConfigManager;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Sound;
@@ -9,10 +10,28 @@ import org.bukkit.entity.Player;
 public class DodgeboltPregamePhaseTask extends DodgeboltPhaseTask {
 
     public final static int PERIOD = 20;
-    private final int TIME = 5;
+    private int TIME = 5;
 
     public DodgeboltPregamePhaseTask(DodgeboltGame game) {
         super(game);
+
+        if (inOvertime() || onMatchPoint()) {
+            TIME = 7;
+            for (Player p : Bukkit.getOnlinePlayers())
+                p.playSound(p.getLocation(), Sound.ENTITY_WITHER_DEATH, 1, 1);
+        }
+    }
+
+    private boolean inOvertime() {
+//        System.out.println(game.getTeam1().getScore());
+//        System.out.println(game.getTeam2().getScore());
+//        System.out.println(game.getTeam1().getScore() - 1);
+//        System.out.println(game.getStartingRoundsToWin());
+        return game.getTeam1().getScore() == game.getTeam2().getScore() && game.getTeam1().getScore() + 1 >= game.getStartingRoundsToWin();
+    }
+
+    private boolean onMatchPoint() {
+        return game.getTeam1().getScore() + 1 == game.getRoundsToWin() || game.getTeam2().getScore() + 1 == game.getRoundsToWin();
     }
 
     public float getSoundPitch(int timeLeft) {
@@ -23,6 +42,13 @@ public class DodgeboltPregamePhaseTask extends DodgeboltPhaseTask {
     }
 
     public String getTitleText(int timeLeft) {
+
+        if (timeLeft > 4 && inOvertime())
+            return ChatColor.RED + "OVERTIME!";
+
+        if (timeLeft > 4 && onMatchPoint())
+            return ChatColor.AQUA + "MATCH POINT!";
+
         if (timeLeft > 2)
             return ChatColor.AQUA + "Starting...";
         else if (timeLeft == 2)

@@ -1,6 +1,8 @@
-package me.devvy.dodgebolt.game;
+package me.devvy.dodgebolt.signs;
 
 import me.devvy.dodgebolt.Dodgebolt;
+import me.devvy.dodgebolt.game.DodgeboltGame;
+import me.devvy.dodgebolt.game.DodgeboltGameState;
 import me.devvy.dodgebolt.util.ConfigManager;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;

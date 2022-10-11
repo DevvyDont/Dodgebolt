@@ -1,5 +1,7 @@
 package me.devvy.dodgebolt.util;
 
+import me.devvy.dodgebolt.Dodgebolt;
+import me.devvy.dodgebolt.team.Team;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 

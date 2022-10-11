@@ -1,4 +1,4 @@
-package me.devvy.dodgebolt.game;
+package me.devvy.dodgebolt.map;
 
 import com.sk89q.worldedit.EditSession;
 import com.sk89q.worldedit.WorldEdit;
@@ -13,6 +13,7 @@ import com.sk89q.worldedit.function.operation.Operations;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.session.ClipboardHolder;
 import me.devvy.dodgebolt.Dodgebolt;
+import me.devvy.dodgebolt.map.DodgeboltArena;
 import me.devvy.dodgebolt.util.ColorTranslator;
 import org.bukkit.ChatColor;
 import org.bukkit.Difficulty;

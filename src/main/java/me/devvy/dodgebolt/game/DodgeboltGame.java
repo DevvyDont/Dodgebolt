@@ -2,6 +2,11 @@ package me.devvy.dodgebolt.game;
 
 import me.devvy.dodgebolt.Dodgebolt;
 import me.devvy.dodgebolt.events.TeamColorChangeEvent;
+import me.devvy.dodgebolt.map.DodgeboltStadium;
+import me.devvy.dodgebolt.signs.ShuffleTeamsSign;
+import me.devvy.dodgebolt.signs.SpectatorSwitchSign;
+import me.devvy.dodgebolt.signs.StartGameSign;
+import me.devvy.dodgebolt.signs.TeamSwitchSign;
 import me.devvy.dodgebolt.tasks.DodgeboltIngamePhaseTask;
 import me.devvy.dodgebolt.tasks.DodgeboltIntermissionPhaseTask;
 import me.devvy.dodgebolt.tasks.DodgeboltPhaseTask;
@@ -42,6 +47,8 @@ public class DodgeboltGame implements Listener {
 
     private final MinecraftScoreboardManager scoreboardManager;
 
+    private final GameStatisticsManager gameStatisticsManager;
+
     private int startingRoundsToWin;
     private int roundsToWin;
 
@@ -72,6 +79,7 @@ public class DodgeboltGame implements Listener {
 
         new ShuffleTeamsSign(this, stadium.getSpawn().clone().add(-2, 2, -2), BlockFace.EAST);
 
+        gameStatisticsManager = new GameStatisticsManager();
         scoreboardManager = new MinecraftScoreboardManager(this);
         Dodgebolt.getPlugin(Dodgebolt.class).getServer().getPluginManager().registerEvents(scoreboardManager, Dodgebolt.getPlugin(Dodgebolt.class));
 
@@ -122,6 +130,10 @@ public class DodgeboltGame implements Listener {
             Team t = i < partition ? team2 : team1;
             t.addPlayer(activePlayerPool.get(i));
         }
+    }
+
+    public int getCurrentRoundNumber() {
+        return team1.getScore() + team2.getScore() + 1;
     }
 
     public int getRoundsToWin() {
@@ -185,6 +197,18 @@ public class DodgeboltGame implements Listener {
 
     }
 
+    public void sendTitleToSpectators(String title, String subtitle, int fadeIn, int stay, int fadeOut) {
+        for (Player player : Bukkit.getOnlinePlayers())
+            if (getPlayerTeam(player) == null)
+                player.sendTitle(title, subtitle, fadeIn, stay, fadeOut);
+    }
+
+    public void playSoundToSpectators(Sound sound, float volume, float pitch) {
+        for (Player player : Bukkit.getOnlinePlayers())
+            if (getPlayerTeam(player) == null)
+                player.playSound(player, sound, volume, pitch);
+    }
+
     public DodgeboltGameState getState() {
         return state;
     }
@@ -212,6 +236,8 @@ public class DodgeboltGame implements Listener {
         // Reset the score
         getTeam1().setScore(0);
         getTeam2().setScore(0);
+
+        gameStatisticsManager.clear();
 
         startNewRound();
     }
@@ -248,6 +274,8 @@ public class DodgeboltGame implements Listener {
         float gamePercent = (team1.getScore() + team2.getScore() + 1f) / (roundsToWin * 2f - 1f);
         int newTick = (int) (14000 * gamePercent);
         stadium.getOrigin().getWorld().setTime(newTick);
+
+        gameStatisticsManager.newRound(getCurrentRoundNumber());
 
         // Fix the arena
         stadium.getArena().restoreArena();
@@ -323,10 +351,79 @@ public class DodgeboltGame implements Listener {
     public void exitGameRoundPhase(Team winner) {
         currentPhaseTask.cancel();
 
+        // First we announce the past round results
+        // Check for special win condition, ace > team ace > flawless > clutch
+        RoundStatistics roundStatistics = gameStatisticsManager.getRoundStatistics(getCurrentRoundNumber());
+
+        Player acedPlayer = roundStatistics.getWhoAced(winner);
+        Team loser = getOpposingTeam(winner);
+
+        if (acedPlayer != null) {
+            // Announce an ace win
+            Bukkit.broadcastMessage(String.format("%s[%s!%s] %s%s %sACED %sand won the round for %s%s%s!", ChatColor.GRAY, ChatColor.YELLOW, ChatColor.GRAY, winner.getTeamColor(), acedPlayer.getName(), ChatColor.GOLD, ChatColor.GRAY, winner.getTeamColor(), winner.getName(), ChatColor.GRAY));
+            winner.playSound(Sound.UI_TOAST_CHALLENGE_COMPLETE, .75f,1);
+            playSoundToSpectators(Sound.UI_TOAST_CHALLENGE_COMPLETE, .75f,1);
+            loser.playSound(Sound.ENTITY_WITHER_DEATH, .75f, 1);
+
+            winner.sendTitle(String.format("%s%sACE", ChatColor.GOLD, ChatColor.BOLD), String.format("%s%s %skilled the entire enemy team!", winner.getTeamColor(), acedPlayer.getName(), ChatColor.GRAY), 10, 100, 40);
+            sendTitleToSpectators(String.format("%s%sACE", ChatColor.GOLD, ChatColor.BOLD), String.format("%s%s %skilled the entire enemy team!", winner.getTeamColor(), acedPlayer.getName(), ChatColor.GRAY), 10, 100, 40);
+            loser.sendTitle(String.format("%s%sACE", ChatColor.DARK_PURPLE, ChatColor.BOLD), String.format("%s%s %skilled the entire enemy team!", winner.getTeamColor(), acedPlayer.getName(), ChatColor.GRAY), 10, 100, 40);
+
+        } else if (roundStatistics.teamAced(winner)) {
+            // Announce a team ace win
+            Bukkit.broadcastMessage(String.format("%s[%s!%s] All members of %s%s %sgot a kill and won the round!", ChatColor.GRAY, ChatColor.YELLOW, ChatColor.GRAY, winner.getTeamColor(), winner.getName(), ChatColor.GRAY));
+            winner.playSound(Sound.ENTITY_PLAYER_LEVELUP, .75f,1);
+            playSoundToSpectators(Sound.ENTITY_PLAYER_LEVELUP, .75f,1);
+            loser.playSound(Sound.ENTITY_ENDERMAN_DEATH, .75f, .75f);
+
+            winner.sendTitle(String.format("%s%sTEAM ACE", ChatColor.GREEN, ChatColor.BOLD), String.format("%sTeam %s%s %sall got one kill!", ChatColor.GRAY, winner.getTeamColor(), winner.getName(), ChatColor.GRAY), 10, 100, 40);
+            sendTitleToSpectators(String.format("%s%sTEAM ACE", ChatColor.GREEN, ChatColor.BOLD), String.format("%sTeam %s%s %sall got one kill!", ChatColor.GRAY, winner.getTeamColor(), winner.getName(), ChatColor.GRAY), 10, 100, 40);
+            loser.sendTitle(String.format("%s%sTEAM ACE", ChatColor.RED, ChatColor.BOLD), String.format("%sTeam %s%s %sall got one kill!", ChatColor.GRAY, winner.getTeamColor(), winner.getName(), ChatColor.GRAY), 10, 100, 40);
+        } else if (roundStatistics.teamFlawlessed(winner)) {
+            // Announce a flawless win
+            Bukkit.broadcastMessage(String.format("%s[%s!%s] All members of %s%s %slived and won the round!", ChatColor.GRAY, ChatColor.YELLOW, ChatColor.GRAY, winner.getTeamColor(), winner.getName(), ChatColor.GRAY));
+            winner.playSound(Sound.ENTITY_PLAYER_LEVELUP, .75f,1);
+            playSoundToSpectators(Sound.ENTITY_PLAYER_LEVELUP, .75f,1);
+            loser.playSound(Sound.ENTITY_ENDERMAN_DEATH, .75f, .75f);
+
+            winner.sendTitle(String.format("%s%sFLAWLESS", ChatColor.GREEN, ChatColor.BOLD), String.format("%sTeam %s%s %sall stayed alive!", ChatColor.GRAY, winner.getTeamColor(), winner.getName(), ChatColor.GRAY), 10, 100, 40);
+            sendTitleToSpectators(String.format("%s%sFLAWLESS", ChatColor.GREEN, ChatColor.BOLD), String.format("%sTeam %s%s %sall stayed alive!", ChatColor.GRAY, winner.getTeamColor(), winner.getName(), ChatColor.GRAY), 10, 100, 40);
+            loser.sendTitle(String.format("%s%sFLAWLESS", ChatColor.RED, ChatColor.BOLD), String.format("%sTeam %s%s %sall stayed alive!", ChatColor.GRAY, winner.getTeamColor(), winner.getName(), ChatColor.GRAY), 10, 100, 40);
+        } else if (roundStatistics.teamClutched(winner)) {
+            // Announce a clutch win
+            Bukkit.broadcastMessage(String.format("%s[%s!%s] %s%s %sclutched and won the round for %s%s%s!", ChatColor.GRAY, ChatColor.YELLOW, ChatColor.GRAY, winner.getTeamColor(), winner.getPlayersAlive().iterator().next(), ChatColor.GRAY, winner.getTeamColor(), winner.getName(), ChatColor.GRAY));
+            winner.playSound(Sound.ENTITY_VILLAGER_CELEBRATE, .75f,1);
+            playSoundToSpectators(Sound.ENTITY_VILLAGER_CELEBRATE, .75f,1);
+            loser.playSound(Sound.ENTITY_ENDERMAN_DEATH, .75f, 1.5f);
+
+            winner.sendTitle(String.format("%s%sCLUTCH", ChatColor.GREEN, ChatColor.BOLD), String.format("%s%s %swon the round!", winner.getTeamColor(), winner.getPlayersAlive().iterator().next(), ChatColor.GRAY), 10, 100, 40);
+            sendTitleToSpectators(String.format("%s%sCLUTCH", ChatColor.GREEN, ChatColor.BOLD), String.format("%s%s %swon the round!", winner.getTeamColor(), winner.getPlayersAlive().iterator().next(), ChatColor.GRAY), 10, 100, 40);
+            loser.sendTitle(String.format("%s%sCLUTCH", ChatColor.RED, ChatColor.BOLD), String.format("%s%s %swon the round!", winner.getTeamColor(), winner.getPlayersAlive().iterator().next(), ChatColor.GRAY), 10, 100, 40);
+        } else {
+            // Announce a normal round win
+            Bukkit.broadcastMessage(String.format("%s[%s!%s] %s%s %swon the round!", ChatColor.GRAY, ChatColor.YELLOW, ChatColor.GRAY, winner.getTeamColor(), winner.getName(), ChatColor.GRAY));
+            winner.playSound(Sound.ENTITY_PLAYER_LEVELUP, .75f,1);
+            playSoundToSpectators(Sound.ENTITY_PLAYER_LEVELUP, .75f,1);
+            loser.playSound(Sound.ENTITY_VILLAGER_NO, .75f, .75f);
+
+            winner.sendTitle(String.format("%sROUND WIN", ChatColor.GREEN), "", 10, 100, 40);
+            sendTitleToSpectators(String.format("%sROUND WIN", ChatColor.GREEN), "", 10, 100, 40);
+            loser.sendTitle(String.format("%sROUND LOSS", ChatColor.RED), "", 10, 100, 40);
+        }
+
+        // Other stat tracking stuff we have to do
+        for (Player winningMember : winner.getMembersAsPlayers()) {
+            Fireworks.spawnVictoryFireworks(winningMember, ColorTranslator.translateChatColorToColor(winner.getTeamColor()));
+            PlayerStats.addPlayerRoundWins(winningMember);
+        }
+
+        // Now that we announced the results completely, we can update score and check for OT or end the game
         setState(DodgeboltGameState.INTERMISSION);
+
+        // Give the winners a point
         winner.setScore(winner.getScore() + 1);
 
-        // Win by 2 rule?
+        // Win by 2 rule? if both teams are on match point
         if (Dodgebolt.getPlugin(Dodgebolt.class).getConfig().getBoolean(ConfigManager.WIN_BY_2)) {
             // If the teams scores are equal and the next point would be a game winner....
             if (team1.getScore() == team2.getScore() && getRoundsToWin() - 1 == team1.getScore()) {
@@ -335,27 +432,8 @@ public class DodgeboltGame implements Listener {
             }
         }
 
-        Bukkit.broadcastMessage(ChatColor.GRAY + "[" + ChatColor.YELLOW + "!" + ChatColor.GRAY + "] " + winner.getTeamColor() + ChatColor.BOLD.toString() + winner.getName() + ChatColor.GREEN + " won the round!");
-        for (Player player : winner.getMembersAsPlayers()) {
-            player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, .75f, 1);
-            Fireworks.spawnVictoryFireworks(player, ColorTranslator.translateChatColorToColor(winner.getTeamColor()));
-            PlayerStats.addPlayerRoundWins(player);
-        }
-
-        for (Player player : getOpposingTeam(winner).getMembersAsPlayers())
-            player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1, 1);
-
+        // Set players to psuedogod mode and clear their inventories
         for (Player player : Bukkit.getOnlinePlayers()) {
-
-            String bigTitle = "";
-            Team playersTeam = getPlayerTeam(player);
-            if (playersTeam == winner)
-                bigTitle = ChatColor.GREEN + "Round Win!";
-            else if (playersTeam == getOpposingTeam(winner))
-                bigTitle = ChatColor.RED + "Round Lost!";
-
-            player.sendTitle(bigTitle, winner.getTeamColor() + ChatColor.BOLD.toString() + winner.getName() + ChatColor.GRAY + " won the round!", 10, 60, 20);
-
             player.getInventory().clear();
             player.setGlowing(false);
             player.setInvulnerable(true);
@@ -563,6 +641,9 @@ public class DodgeboltGame implements Listener {
             PlayerStats.addPlayerKills(killer);
         PlayerStats.addPlayerDeaths(player);
 
+        // Keep track for game stats, if killer is null its a suicide so player killed player otherwise killer is killer
+        gameStatisticsManager.registerKill(killer == null ? player : killer, player);
+
         for (Player otherPlayers : Bukkit.getOnlinePlayers()) {
 
             if (team1.getElimTracker().getTeamMembersAlive() == 1 && team2.getElimTracker().getTeamMembersAlive() == 1)
@@ -672,10 +753,12 @@ public class DodgeboltGame implements Listener {
             event.getProjectile().setGlowing(true);
         }
 
-        if (outOfBowRange(event.getEntity().getLocation()))
+        if (outOfBowRange(event.getEntity().getLocation())) {
             event.setCancelled(true);
-        else
-            PlayerStats.addArrowsFired((Player) event.getEntity());
+        }
+
+        PlayerStats.addArrowsFired((Player) event.getEntity());
+        gameStatisticsManager.registerArrowShot(((Player) event.getEntity()));
     }
 
     @EventHandler(priority = EventPriority.MONITOR)

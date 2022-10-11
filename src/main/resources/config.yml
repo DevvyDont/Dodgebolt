@@ -5,6 +5,6 @@ op-change-settings: true
 # Should only server operators be allowed to shift click team signs to change colors?
 op-change-color: false
 # How many rounds should a team have to win to win the entire game? Note win by 2 rule will still add rounds after this
-round-win-limit: 3
+round-win-limit: 5
 # Should a team have to win by two rounds in order to win the game? i.e. if score is 2-2, a team must get 4 round wins, 3-3, a team must get 5 round wins etc.
 win-by-2: true

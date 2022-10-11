@@ -1,4 +1,4 @@
-package me.devvy.dodgebolt.game;
+package me.devvy.dodgebolt.map;
 
 import com.sk89q.worldedit.EditSession;
 import com.sk89q.worldedit.WorldEdit;

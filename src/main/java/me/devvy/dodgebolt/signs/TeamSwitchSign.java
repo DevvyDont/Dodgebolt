@@ -1,9 +1,11 @@
-package me.devvy.dodgebolt.game;
+package me.devvy.dodgebolt.signs;
 
 import me.devvy.dodgebolt.Dodgebolt;
 import me.devvy.dodgebolt.events.PlayerJoinTeamEvent;
 import me.devvy.dodgebolt.events.PlayerLeaveTeamEvent;
 import me.devvy.dodgebolt.events.TeamColorChangeEvent;
+import me.devvy.dodgebolt.game.DodgeboltGame;
+import me.devvy.dodgebolt.game.DodgeboltGameState;
 import me.devvy.dodgebolt.team.Team;
 import me.devvy.dodgebolt.util.ColorTranslator;
 import me.devvy.dodgebolt.util.ConfigManager;

@@ -1,6 +1,7 @@
-package me.devvy.dodgebolt.game;
+package me.devvy.dodgebolt.map;
 
 import me.devvy.dodgebolt.Dodgebolt;
+import me.devvy.dodgebolt.map.DodgeboltArena;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Sound;
