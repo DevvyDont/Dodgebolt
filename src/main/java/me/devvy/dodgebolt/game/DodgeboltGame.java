@@ -4,10 +4,7 @@ import me.devvy.dodgebolt.Dodgebolt;
 import me.devvy.dodgebolt.events.TeamColorChangeEvent;
 import me.devvy.dodgebolt.hologram.HolographicDynamicScoreboard;
 import me.devvy.dodgebolt.map.DodgeboltStadium;
-import me.devvy.dodgebolt.signs.ShuffleTeamsSign;
-import me.devvy.dodgebolt.signs.SpectatorSwitchSign;
-import me.devvy.dodgebolt.signs.StartGameSign;
-import me.devvy.dodgebolt.signs.TeamSwitchSign;
+import me.devvy.dodgebolt.signs.*;
 import me.devvy.dodgebolt.tasks.DodgeboltIngamePhaseTask;
 import me.devvy.dodgebolt.tasks.DodgeboltIntermissionPhaseTask;
 import me.devvy.dodgebolt.tasks.DodgeboltPhaseTask;
@@ -82,6 +79,7 @@ public class DodgeboltGame implements Listener {
         new StartGameSign(this, stadium.getSpawn().clone().add(-2, 2, 0), BlockFace.EAST);
 
         new ShuffleTeamsSign(this, stadium.getSpawn().clone().add(-2, 2, -2), BlockFace.EAST);
+        new ScoreLimitSign(this, stadium.getSpawn().clone().add(-2, 2, 2), BlockFace.EAST);
 
         gameStatisticsManager = new GameStatisticsManager();
         scoreboardManager = new MinecraftScoreboardManager(this);
@@ -238,6 +236,8 @@ public class DodgeboltGame implements Listener {
 
         if (getState() != DodgeboltGameState.WAITING)
             return;
+
+        setStartingRoundsToWin(roundsToWin);
 
         // Reset the score
         getTeam1().setScore(0);
