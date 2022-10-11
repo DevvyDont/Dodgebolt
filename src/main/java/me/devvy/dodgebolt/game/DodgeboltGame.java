@@ -3,6 +3,7 @@ package me.devvy.dodgebolt.game;
 import me.devvy.dodgebolt.Dodgebolt;
 import me.devvy.dodgebolt.events.TeamColorChangeEvent;
 import me.devvy.dodgebolt.hologram.HolographicDynamicScoreboard;
+import me.devvy.dodgebolt.hologram.PlayerEntry;
 import me.devvy.dodgebolt.map.DodgeboltStadium;
 import me.devvy.dodgebolt.signs.*;
 import me.devvy.dodgebolt.tasks.DodgeboltIngamePhaseTask;
@@ -385,6 +386,8 @@ public class DodgeboltGame implements Listener {
             sendTitleToSpectators(String.format("%s%sACE", ChatColor.GOLD, ChatColor.BOLD), String.format("%s%s %skilled the entire enemy team!", winner.getTeamColor(), acedPlayer.getName(), ChatColor.GRAY), 10, 100, 40);
             loser.sendTitle(String.format("%s%sACE", ChatColor.DARK_PURPLE, ChatColor.BOLD), String.format("%s%s %skilled the entire enemy team!", winner.getTeamColor(), acedPlayer.getName(), ChatColor.GRAY), 10, 100, 40);
 
+            PlayerStats.addStatistic(acedPlayer, PlayerStats.ACES);
+
         } else if (roundStatistics.teamAced(winner)) {
             // Announce a team ace win
             Bukkit.broadcastMessage(String.format("%s[%s!%s] All members of %s%s %sgot a kill and won the round!", ChatColor.GRAY, ChatColor.YELLOW, ChatColor.GRAY, winner.getTeamColor(), winner.getName(), ChatColor.GRAY));
@@ -430,7 +433,7 @@ public class DodgeboltGame implements Listener {
         // Other stat tracking stuff we have to do
         for (Player winningMember : winner.getMembersAsPlayers()) {
             Fireworks.spawnVictoryFireworks(winningMember, ColorTranslator.translateChatColorToColor(winner.getTeamColor()));
-            PlayerStats.addPlayerRoundWins(winningMember);
+            PlayerStats.addStatistic(winningMember, PlayerStats.PLAYER_ROUND_WINS);
         }
 
         // Now that we announced the results completely, we can update score and check for OT or end the game
@@ -538,9 +541,14 @@ public class DodgeboltGame implements Listener {
         for (Player winningPlayer : winner.getMembersAsPlayers()) {
             winningPlayer.playSound(winningPlayer.getEyeLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, .75f, 1);
             winningPlayer.sendTitle(ChatColor.GREEN + "VICTORY", winner.getTeamColor() + winner.getName() + ChatColor.GRAY + " won the game!", 10, 80, 40);
-            PlayerStats.addPlayerWins(winningPlayer);
-            Items.equipWinnerCrown(winningPlayer);
+            PlayerStats.addStatistic(winningPlayer, PlayerStats.PLAYER_WINS);
+            Items.equipWinnerCrown(winningPlayer, Material.GOLDEN_HELMET, ChatColor.YELLOW + "Winner's Crown", String.format("%swinning %sa match %s%s %s- %s%s%s!", ChatColor.GREEN, ChatColor.GRAY, winner.getTeamColor(), winner.getScore(), ChatColor.GRAY, getOpposingTeam(winner).getTeamColor(), getOpposingTeam(winner).getScore(), ChatColor.GRAY));
         }
+
+        // Give the MVP an mvp crown
+        Player matchMVP = mainHoloScoreboard.getMVP().getPlayer();
+        PlayerStats.addStatistic(matchMVP, PlayerStats.MATCH_MVPS);
+        Items.equipWinnerCrown(matchMVP, Material.DIAMOND_HELMET, ChatColor.AQUA + "Match MVP Crown", "achieving " + ChatColor.GOLD + "Match MVP" + ChatColor.GRAY + "!");
 
         // Loop through the losers and tell them they lost
         for (Player losingPlayer : getOpposingTeam(winner).getMembersAsPlayers()) {
@@ -655,8 +663,8 @@ public class DodgeboltGame implements Listener {
 
         Player killer = player.getKiller();
         if (killer != null && getPlayerTeam(killer) != team)
-            PlayerStats.addPlayerKills(killer);
-        PlayerStats.addPlayerDeaths(player);
+            PlayerStats.addStatistic(killer, PlayerStats.PLAYER_KILLS);
+        PlayerStats.addStatistic(player, PlayerStats.PLAYER_DEATHS);
 
         // Keep track for game stats, if killer is null its a suicide so player killed player otherwise killer is killer
         gameStatisticsManager.registerKill(killer == null ? player : killer, player);
@@ -775,7 +783,7 @@ public class DodgeboltGame implements Listener {
             event.setCancelled(true);
         }
 
-        PlayerStats.addArrowsFired((Player) event.getEntity());
+        PlayerStats.addStatistic((Player) event.getEntity(), PlayerStats.ARROWS_FIRED);
         gameStatisticsManager.registerArrowShot(((Player) event.getEntity()));
         mainHoloScoreboard.update();
     }

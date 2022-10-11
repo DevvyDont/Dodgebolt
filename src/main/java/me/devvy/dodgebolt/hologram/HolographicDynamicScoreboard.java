@@ -42,7 +42,7 @@ public class HolographicDynamicScoreboard {
         playersToDisplay.clear();
     }
 
-    private List<PlayerEntry> constructPlayerEntries() {
+    public List<PlayerEntry> constructPlayerEntries() {
         List<PlayerEntry> entries = new ArrayList<>();
 
         for (UUID playerID : playersToDisplay)
@@ -105,4 +105,9 @@ public class HolographicDynamicScoreboard {
         entities.clear();
     }
 
+    public PlayerEntry getMVP() {
+        List<PlayerEntry> entries = constructPlayerEntries();
+        entries.sort(Comparator.comparing(PlayerEntry::getKills).reversed());
+        return entries.get(0);
+    }
 }
