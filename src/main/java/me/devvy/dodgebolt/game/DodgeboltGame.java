@@ -54,12 +54,15 @@ public class DodgeboltGame implements Listener {
     private int startingRoundsToWin;
     private int roundsToWin;
 
+    private int bowDamagePercent = 100;
+
     public DodgeboltGame() {
         World arenaWorld = Bukkit.getWorld("world");
         if (arenaWorld == null)
             throw new IllegalStateException("There must be a world named 'world'!");
 
         arenaWorld.setGameRule(GameRule.DO_FIRE_TICK, false);  // Important so lava doesn't destroy arena
+        arenaWorld.setGameRule(GameRule.NATURAL_REGENERATION, false);  // Important so lava doesn't destroy arena
 
         startingRoundsToWin = Dodgebolt.getPlugin(Dodgebolt.class).getConfig().getInt(ConfigManager.ROUND_WIN_LIMIT);
         roundsToWin = startingRoundsToWin;
@@ -81,6 +84,7 @@ public class DodgeboltGame implements Listener {
 
         new ShuffleTeamsSign(this, stadium.getSpawn().clone().add(-2, 2, -2), BlockFace.EAST);
         new ScoreLimitSign(this, stadium.getSpawn().clone().add(-2, 2, 2), BlockFace.EAST);
+        new BowDamageSign(this, stadium.getSpawn().clone().add(-2, 2, 3), BlockFace.EAST);
 
         gameStatisticsManager = new GameStatisticsManager();
         scoreboardManager = new MinecraftScoreboardManager(this);
@@ -91,10 +95,11 @@ public class DodgeboltGame implements Listener {
             if (player.isDead())
                 player.spigot().respawn();
 
-            player.setInvulnerable(true);
             player.setAllowFlight(true);
             player.teleport(stadium.getSpawn());
             player.setGameMode(GameMode.SURVIVAL);
+            player.setInvulnerable(false);
+            player.setHealth(20);
             setSpectating(player);
         }
 
@@ -155,6 +160,14 @@ public class DodgeboltGame implements Listener {
 
     public void setRoundsToWin(int roundsToWin) {
         this.roundsToWin = roundsToWin;
+    }
+
+    public int getBowDamagePercent() {
+        return bowDamagePercent;
+    }
+
+    public void setBowDamagePercent(int bowDamagePercent) {
+        this.bowDamagePercent = bowDamagePercent;
     }
 
     public DodgeboltStadium getStadium() {
@@ -326,10 +339,11 @@ public class DodgeboltGame implements Listener {
 
                 player.setGameMode(GameMode.ADVENTURE);
                 player.setAllowFlight(false);
-                player.setInvulnerable(false);
                 player.getInventory().clear();
                 player.teleport(spawn);
                 player.setGlowing(true);
+                player.setHealth(20);
+                player.setInvulnerable(false);
                 givePlayerKit(player);
             }
         }
@@ -456,7 +470,6 @@ public class DodgeboltGame implements Listener {
         for (Player player : Bukkit.getOnlinePlayers()) {
             player.getInventory().clear();
             player.setGlowing(false);
-            player.setInvulnerable(true);
             player.setAllowFlight(true);
             player.stopSound(Sound.MUSIC_DISC_PIGSTEP);
         }
@@ -488,7 +501,6 @@ public class DodgeboltGame implements Listener {
         for (Player player : Bukkit.getOnlinePlayers()) {
             player.getInventory().clear();
             player.setGameMode(GameMode.SURVIVAL);
-            player.setInvulnerable(true);
             player.setAllowFlight(true);
         }
 
@@ -743,10 +755,8 @@ public class DodgeboltGame implements Listener {
     @EventHandler
     public void onPlayerPVP(EntityDamageByEntityEvent event) {
 
-        if (state != DodgeboltGameState.INGAME)
-            return;
-
-        event.setCancelled(true);
+        // Don't do any damage no matter what the cause or source is
+        event.setDamage(0);
 
         if (!(event.getEntity() instanceof Player))
             return;
@@ -757,8 +767,9 @@ public class DodgeboltGame implements Listener {
         if (event.getCause() != EntityDamageEvent.DamageCause.PROJECTILE)
             return;
 
-        event.setCancelled(false);
-        event.setDamage(10000);
+        // At this point an arrow is being shot we can override the damage
+        event.setDamage(EntityDamageEvent.DamageModifier.ARMOR, 0);
+        event.setDamage(EntityDamageEvent.DamageModifier.BASE, bowDamagePercent / 5.0);
     }
 
     @EventHandler
