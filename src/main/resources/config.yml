@@ -8,3 +8,5 @@ op-change-color: false
 round-win-limit: 5
 # Should a team have to win by two rounds in order to win the game? i.e. if score is 2-2, a team must get 4 round wins, 3-3, a team must get 5 round wins etc.
 win-by-2: true
+# Should we play pigstep if we have a 1v1?
+one-vs-one-pigstep: true

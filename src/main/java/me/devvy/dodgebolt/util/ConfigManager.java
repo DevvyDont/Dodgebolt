@@ -12,6 +12,8 @@ public class ConfigManager {
     public final static String ROUND_WIN_LIMIT = "round-win-limit";
     public final static String WIN_BY_2 = "win-by-2";
 
+    public final static String ONEVSONE_PIGSTEP = "one-vs-one-pigstep";
+
     public static void setupDefaultConfig() {
 
         Dodgebolt plugin = Dodgebolt.getPlugin(Dodgebolt.class);
@@ -23,6 +25,7 @@ public class ConfigManager {
         cfg.addDefault(OP_CHANGE_COLOR, false);  // Require ops to change the team color? Useful for private servers
         cfg.addDefault(ROUND_WIN_LIMIT, 5);  // How many rounds do we have to win to win the entire game? Note that the win by 2 rule will still add more rounds if necessary
         cfg.addDefault(WIN_BY_2, true);  // Should we require a team to win by 2 rounds? kinda like tennis
+        cfg.addDefault(ONEVSONE_PIGSTEP, true);  // In a 1v1 should we play pigstep
 
         cfg.options().copyDefaults(true);
         plugin.saveDefaultConfig();

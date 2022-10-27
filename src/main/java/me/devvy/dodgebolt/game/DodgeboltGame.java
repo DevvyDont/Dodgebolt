@@ -367,8 +367,9 @@ public class DodgeboltGame implements Listener {
             player.playSound(player.getLocation(), Sound.BLOCK_ANVIL_DESTROY, 1, 1.5f);
             player.sendTitle("", ChatColor.RED + "Eliminate" + ChatColor.GRAY + " the other team!", 1, 30, 5);
 
+            // If it is a 1v1 play pigstep
             if (team1.getElimTracker().getTeamMembersAlive() == 1 && team2.getElimTracker().getTeamMembersAlive() == 1)
-                player.playSound(player.getEyeLocation().add(0, 60, 0), Sound.MUSIC_DISC_PIGSTEP, 5.5f, 1);
+                playPigstep();
 
             player.setGlowing(false);
 
@@ -685,7 +686,7 @@ public class DodgeboltGame implements Listener {
         for (Player otherPlayers : Bukkit.getOnlinePlayers()) {
 
             if (team1.getElimTracker().getTeamMembersAlive() == 1 && team2.getElimTracker().getTeamMembersAlive() == 1)
-                otherPlayers.playSound(otherPlayers.getEyeLocation().add(0, 60, 0), Sound.MUSIC_DISC_PIGSTEP, 5.2f, 1);
+                playPigstep();
 
             if (otherPlayers == killer)
                 otherPlayers.sendTitle(getBothTeamAliveCountString(),ChatColor.GRAY + "[" + ChatColor.RED + "✘" + ChatColor.GRAY + "] " + player.getDisplayName(), 5, 15, 5);
@@ -715,6 +716,15 @@ public class DodgeboltGame implements Listener {
             stadium.getArena().shrinkArena();
 
         Fireworks.spawnFireworksInstantly(player.getLocation(), ColorTranslator.translateChatColorToColor(team.getTeamColor()));
+    }
+
+    private void playPigstep() {
+
+        if (!Dodgebolt.getInstance().getConfig().getBoolean(ConfigManager.ONEVSONE_PIGSTEP))
+            return;
+
+        for (Player p : Bukkit.getOnlinePlayers())
+            p.playSound(p.getEyeLocation().add(0, 60, 0), Sound.MUSIC_DISC_PIGSTEP, 5.2f, 1);
     }
 
     @EventHandler
