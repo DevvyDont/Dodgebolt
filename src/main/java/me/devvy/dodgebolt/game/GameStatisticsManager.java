@@ -19,6 +19,7 @@ public class GameStatisticsManager {
     Map<UUID, Integer> playerToKillsMap = new HashMap<>();
     Map<UUID, Integer> playerToDeathsMap = new HashMap<>();
     Map<UUID, Integer> playerToArrowsFiredMap = new HashMap<>();
+    Map<UUID, Integer> playerToArrowsHitMap = new HashMap<>();
 
     Map<Integer, RoundStatistics> roundTimeline = new HashMap<>();
 
@@ -60,6 +61,10 @@ public class GameStatisticsManager {
         playerToArrowsFiredMap.put(player.getUniqueId(), playerToArrowsFiredMap.getOrDefault(player.getUniqueId(), 0) + 1);
     }
 
+    public void registerArrowHit(Player player) {
+        playerToArrowsHitMap.put(player.getUniqueId(), playerToArrowsHitMap.getOrDefault(player.getUniqueId(), 0) + 1);
+    }
+
     // Completely wipe all stats for a new game
     public void clear() {
         playerToKillsMap.clear();
@@ -72,7 +77,9 @@ public class GameStatisticsManager {
         return new PlayerEntry(uuid,
                 playerToKillsMap.getOrDefault(uuid, 0),
                 playerToDeathsMap.getOrDefault(uuid, 0),
-                playerToArrowsFiredMap.getOrDefault(uuid, 0));
+                playerToArrowsFiredMap.getOrDefault(uuid, 0),
+                playerToArrowsHitMap.getOrDefault(uuid, 0)
+        );
     }
 
 

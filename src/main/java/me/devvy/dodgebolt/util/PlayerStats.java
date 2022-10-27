@@ -12,6 +12,7 @@ public class PlayerStats {
     public final static NamespacedKey PLAYER_KILLS = new NamespacedKey(Dodgebolt.getPlugin(Dodgebolt.class), "player_kills");
     public final static NamespacedKey PLAYER_DEATHS = new NamespacedKey(Dodgebolt.getPlugin(Dodgebolt.class), "player_deaths");
     public final static NamespacedKey ARROWS_FIRED = new NamespacedKey(Dodgebolt.getPlugin(Dodgebolt.class), "arrows_fired");
+    public final static NamespacedKey ARROWS_HIT = new NamespacedKey(Dodgebolt.getPlugin(Dodgebolt.class), "arrows_hit");
     public final static NamespacedKey MATCH_MVPS = new NamespacedKey(Dodgebolt.getPlugin(Dodgebolt.class), "match_mvps");
     public static final NamespacedKey ACES = new NamespacedKey(Dodgebolt.getPlugin(Dodgebolt.class), "aces");
 

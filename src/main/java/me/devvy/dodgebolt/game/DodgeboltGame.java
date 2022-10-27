@@ -14,10 +14,7 @@ import me.devvy.dodgebolt.team.Team;
 import me.devvy.dodgebolt.util.*;
 import org.bukkit.*;
 import org.bukkit.block.BlockFace;
-import org.bukkit.entity.Arrow;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.Item;
-import org.bukkit.entity.Player;
+import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -30,6 +27,7 @@ import org.bukkit.event.player.*;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
+import org.bukkit.projectiles.ProjectileSource;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
@@ -834,6 +832,34 @@ public class DodgeboltGame implements Listener {
         PlayerStats.addStatistic((Player) event.getEntity(), PlayerStats.ARROWS_FIRED);
         gameStatisticsManager.registerArrowShot(((Player) event.getEntity()));
         mainHoloScoreboard.update();
+    }
+
+    @EventHandler
+    public void onArrowHitPlayer(EntityDamageByEntityEvent event) {
+
+        // Specifically find when a player is hit by an arrow fired by another player
+        if (state != DodgeboltGameState.INGAME)
+            return;
+
+        if (!(event.getEntity() instanceof Player))
+            return;
+
+        if (!(event.getDamager() instanceof Projectile))
+            return;
+
+        ProjectileSource src = ((Projectile) event.getDamager()).getShooter();
+
+        if (!(src instanceof Player))
+            return;
+
+        Player playerSrc = (Player) src;
+
+        if (getPlayerTeam(playerSrc) == null)
+            return;
+
+        gameStatisticsManager.registerArrowHit(playerSrc);
+        PlayerStats.addStatistic(playerSrc, PlayerStats.ARROWS_HIT);
+
     }
 
     @EventHandler(priority = EventPriority.MONITOR)

@@ -11,12 +11,14 @@ public class PlayerEntry {
     private int kills;
     private int deaths;
     private int arrowsFired;
+    private int arrowsHit;
 
-    public PlayerEntry(UUID uuid, int kills, int deaths, int arrowsFired) {
+    public PlayerEntry(UUID uuid, int kills, int deaths, int arrowsFired, int arrowsHit) {
         this.uuid = uuid;
         this.kills = kills;
         this.deaths = deaths;
         this.arrowsFired = arrowsFired;
+        this.arrowsHit = arrowsHit;
     }
 
     public Player getPlayer() {
@@ -35,7 +37,7 @@ public class PlayerEntry {
         if (arrowsFired <= 0)
             return 0;
 
-        return (float) kills / (float) arrowsFired;
+        return (float) arrowsHit / (float) arrowsFired;
     }
 
     public String getFormattedAccuracy() {

@@ -66,6 +66,8 @@ public class Items {
                 int rounds = PlayerStats.getStatistic(player, PlayerStats.PLAYER_ROUND_WINS);
                 int kills = PlayerStats.getStatistic(player, PlayerStats.PLAYER_KILLS);
                 int arrows = PlayerStats.getStatistic(player, PlayerStats.ARROWS_FIRED);
+                int arrowsHit = PlayerStats.getStatistic(player, PlayerStats.ARROWS_HIT);
+                float acc = arrows > 0 ? ((float)arrowsHit) / arrows : 0;
                 int deaths = PlayerStats.getStatistic(player, PlayerStats.PLAYER_DEATHS);
                 int mvps = PlayerStats.getStatistic(player, PlayerStats.MATCH_MVPS);
                 int aces = PlayerStats.getStatistic(player, PlayerStats.ACES);
@@ -87,7 +89,7 @@ public class Items {
                         ChatColor.GRAY + "K/D Ratio: " + ChatColor.GOLD + getKDRatio(kills, deaths),
                         "",
                         ChatColor.GRAY + "Arrows Fired: " + ChatColor.GREEN + arrows,
-                        ChatColor.GRAY + "Accuracy: " + ChatColor.GREEN + Math.round((((float)kills / arrows) * 100) * 100.0) / 100.0 + "%",
+                        ChatColor.GRAY + "Accuracy: " + ChatColor.GREEN + Math.round(((acc) * 100) * 100.0) / 100.0 + "%",
                         "",
                         ChatColor.GRAY + ChatColor.BOLD.toString() + "Match MVPs: " + ChatColor.YELLOW + mvps,
                         ChatColor.GRAY + ChatColor.BOLD.toString() + "Aces: " + ChatColor.GOLD + aces,
