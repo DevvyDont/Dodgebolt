@@ -859,6 +859,7 @@ public class DodgeboltGame implements Listener {
 
         gameStatisticsManager.registerArrowHit(playerSrc);
         PlayerStats.addStatistic(playerSrc, PlayerStats.ARROWS_HIT);
+        mainHoloScoreboard.update();
 
     }
 
