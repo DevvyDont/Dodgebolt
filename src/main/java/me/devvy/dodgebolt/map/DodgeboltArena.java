@@ -47,6 +47,8 @@ public class DodgeboltArena {
 
     private int currentRing = 0;
 
+    private DodgeboltArenaOvertimeShatterTask overtimeShatterTask;
+
     public DodgeboltArena(Location origin) {
         this.origin = origin;
         this.spawn = origin.clone().add(0, 6, 0);
@@ -112,6 +114,8 @@ public class DodgeboltArena {
         rings.add(new DodgeboltArenaDisappearingRing(this, ring4locs));
         rings.add(new DodgeboltArenaDisappearingRing(this, ring5locs));
         rings.add(new DodgeboltArenaDisappearingRing(this, ring6locs));
+
+        overtimeShatterTask = null;
     }
 
     public boolean isGenerated() {
@@ -287,6 +291,27 @@ public class DodgeboltArena {
 
         rings.get(currentRing).startFullDisappearingTask();
         currentRing++;
+    }
+
+    public void startOvertimeShatter() {
+
+        if (overtimeShatterTask != null)
+            stopOvertimeShatter();
+
+        // After all rings are destroyed start slowly breaking the entire arena
+        overtimeShatterTask = new DodgeboltArenaOvertimeShatterTask(this);
+        overtimeShatterTask.runTaskTimer(Dodgebolt.getInstance(), 0, 2);
+
+    }
+
+    public void stopOvertimeShatter() {
+
+        if (overtimeShatterTask == null)
+            return;
+
+        // Stop breaking blocks
+        overtimeShatterTask.cancel();
+        overtimeShatterTask = null;
     }
 
     public Location[] getArrowSpawnLocations() {

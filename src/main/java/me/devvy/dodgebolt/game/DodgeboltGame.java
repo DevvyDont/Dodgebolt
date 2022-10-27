@@ -379,6 +379,7 @@ public class DodgeboltGame implements Listener {
     }
 
     public void exitGameRoundPhase(Team winner) {
+        stadium.getArena().stopOvertimeShatter();
         currentPhaseTask.cancel();
 
         // First we announce the past round results
