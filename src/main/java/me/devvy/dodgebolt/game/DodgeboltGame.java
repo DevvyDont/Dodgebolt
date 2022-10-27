@@ -743,13 +743,40 @@ public class DodgeboltGame implements Listener {
             }
         }
 
-        if (event.getFrom().getBlock() != event.getTo().getBlock() && outOfBowRange(event.getTo()) && !outOfBowRange(event.getFrom())) {
-            for (ItemStack item : event.getPlayer().getInventory())
-                if (item != null && item.getType() == Material.BOW)
-                    item.setAmount(0);
-        }
+        // If the player is over the foul line take their bow away
+        if (event.getFrom().getBlock() != event.getTo().getBlock() && outOfBowRange(event.getTo()) && !outOfBowRange(event.getFrom()))
+            event.getPlayer().getInventory().setItem(0, Items.getInactiveBow());
+        // If the player went back into play give them the bow back
         else if (event.getFrom().getBlock() != event.getTo().getBlock() && outOfBowRange(event.getFrom()) && !outOfBowRange(event.getTo()))
-            event.getPlayer().getInventory().addItem(Items.getDodgeboltBow());
+            event.getPlayer().getInventory().setItem(0, Items.getDodgeboltBow());
+    }
+
+    @EventHandler
+    public void onPlayerClickBowInInventory(InventoryClickEvent event) {
+
+        if (state == DodgeboltGameState.WAITING)
+            return;
+
+        if (getPlayerTeam((Player) event.getWhoClicked()) == null)
+            return;
+
+        // If the inventory slot is slot 0 don't let them do anything
+        if (event.getSlot() == 0)
+            event.setCancelled(true);
+
+    }
+
+    @EventHandler
+    public void onPlayerAttemptOffhandSlotOne(PlayerSwapHandItemsEvent event) {
+
+        if (state == DodgeboltGameState.WAITING)
+            return;
+
+        if (getPlayerTeam(event.getPlayer()) == null)
+            return;
+
+        if (event.getPlayer().getInventory().getHeldItemSlot() == 0)
+            event.setCancelled(true);
     }
 
     @EventHandler

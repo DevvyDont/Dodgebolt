@@ -27,6 +27,18 @@ public class Items {
         return bow;
     }
 
+    public static ItemStack getInactiveBow() {
+        ItemStack clay = new ItemStack(Material.CLAY_BALL);
+        ItemMeta claymeta = clay.getItemMeta();
+        claymeta.setDisplayName(ChatColor.RED + "Get behind the foul line!");
+        clay.setItemMeta(claymeta);
+        return clay;
+    }
+
+    public static boolean isBowItem(ItemStack item) {
+        return item.getType().equals(Material.BOW) || item.getType().equals(Material.CLAY_BALL);
+    }
+
     private static double getKDRatio(int kills, int deaths) {
 
         if (deaths == 0)
