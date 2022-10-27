@@ -52,7 +52,7 @@ public class MinecraftScoreboardManager implements Listener {
         adminScoreboardTeam.setPrefix(ChatColor.DARK_GRAY + "[" + ChatColor.DARK_RED + "ADMIN" + ChatColor.DARK_GRAY + "] ");
         adminScoreboardTeam.setColor(ChatColor.RED);
 
-        sidebar = scoreboard.registerNewObjective("dummy", "dummy", ChatColor.AQUA + "Dodgebolt");
+        sidebar = scoreboard.registerNewObjective("dummy", "dummy", ChatColor.AQUA + ChatColor.BOLD.toString() + "Dodgebolt");
 
         sidebarLineCurrRound = scoreboard.registerNewTeam("CurrRound");
         sidebarLineCurrRound.addEntry(ChatColor.values()[6].toString());
@@ -130,8 +130,8 @@ public class MinecraftScoreboardManager implements Listener {
     }
 
     public void updateSidebar() {
-        sidebarLineCurrRound.setPrefix(ChatColor.YELLOW + ChatColor.BOLD.toString() + "Current Round: ");
-        sidebarLineCurrRound.setSuffix(ChatColor.WHITE.toString() + (game.getState() == DodgeboltGameState.WAITING ? 0 : (Math.min(game.getTeam1().getScore() + game.getTeam2().getScore() + 1, game.getRoundsToWin() * 2 -2))) + "/" + (game.getRoundsToWin() * 2 - 1));
+        sidebarLineCurrRound.setPrefix(ChatColor.YELLOW + "Current Round:    ");
+        sidebarLineCurrRound.setSuffix(ChatColor.WHITE.toString() + (game.getState() == DodgeboltGameState.WAITING ? 0 : (Math.min(game.getTeam1().getScore() + game.getTeam2().getScore() + 1, game.getRoundsToWin() * 2 -2))) + ChatColor.GRAY + "/" + (game.getRoundsToWin() * 2 - 1));
         sidebarLineTeam1ScoreLabel.setPrefix(game.getTeam1().getTeamColor() + teamColorToCallsign(game.getTeam1().getTeamColor()) + game.getTeam1().getName());
         sidebarLineTeam2ScoreLabel.setPrefix(game.getTeam2().getTeamColor() + teamColorToCallsign(game.getTeam2().getTeamColor()) + game.getTeam2().getName());
 
@@ -144,7 +144,7 @@ public class MinecraftScoreboardManager implements Listener {
     private String getTeamScorePrefixSuffix(me.devvy.dodgebolt.team.Team team) {
 
         if (game.getRoundsToWin() > 5)
-            return team.getTeamColor().toString() + ChatColor.BOLD + team.getScore() + ChatColor.GRAY + " / " + ChatColor.WHITE + ChatColor.BOLD + game.getRoundsToWin();
+            return team.getTeamColor().toString() + ChatColor.BOLD + team.getScore() + ChatColor.GRAY + " / " + ChatColor.BOLD + game.getRoundsToWin();
 
         StringBuilder suffix = new StringBuilder(team.getScore() > 0 ? team.getTeamColor().toString() + ChatColor.BOLD : "");
         for (int i = 0; i < team.getScore(); i++)
