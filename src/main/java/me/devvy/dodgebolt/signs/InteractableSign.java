@@ -77,7 +77,7 @@ public abstract class InteractableSign implements Listener {
     }
 
     public void destroy() {
-        location.getBlock().breakNaturally();
+        location.getBlock().setType(Material.AIR);
         HandlerList.unregisterAll(this);
     }
 

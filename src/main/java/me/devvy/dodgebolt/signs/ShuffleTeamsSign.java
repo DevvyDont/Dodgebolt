@@ -37,7 +37,7 @@ public class ShuffleTeamsSign extends InteractableSign {
 
         game.shuffleTeams(includeSpecs);
         String specSwitchAlert = includeSpecs ? " and " + ChatColor.LIGHT_PURPLE + "Spectators" + ChatColor.AQUA + " have been auto assigned" : "";
-        Bukkit.broadcastMessage(ChatColor.GRAY + "[" + ChatColor.YELLOW + "!" + ChatColor.GRAY + "] " + ChatColor.AQUA + "Teams have been shuffled" + specSwitchAlert + ChatColor.AQUA + "!");
+        game.broadcast(ChatColor.GRAY + "[" + ChatColor.YELLOW + "!" + ChatColor.GRAY + "] " + ChatColor.AQUA + "Teams have been shuffled" + specSwitchAlert + ChatColor.AQUA + "!");
     }
 
 }

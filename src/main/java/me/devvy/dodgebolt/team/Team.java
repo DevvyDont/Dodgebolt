@@ -9,6 +9,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Sound;
+import org.bukkit.entity.Cat;
 import org.bukkit.entity.Player;
 
 import java.util.*;
@@ -29,6 +30,10 @@ public class Team {
 
     public String getName() {
         return name;
+    }
+
+    public String getColoredName() {
+        return getTeamColor() + getName();
     }
 
     public ChatColor getTeamColor() {
@@ -74,6 +79,7 @@ public class Team {
 
         PlayerJoinTeamEvent event = new PlayerJoinTeamEvent(this, player);
         Dodgebolt.getPlugin(Dodgebolt.class).getServer().getPluginManager().callEvent(event);
+        Dodgebolt.getInstance().getGame().broadcast(ChatColor.GRAY + "[" + ChatColor.YELLOW + "!" + ChatColor.GRAY + "] " + getCleanMemberString(player) + ChatColor.GREEN + " joined the " + getColoredName() + " team" + ChatColor.GREEN + "!");
     }
 
     public void removePlayer(Player player) {
@@ -82,6 +88,8 @@ public class Team {
 
         PlayerLeaveTeamEvent event = new PlayerLeaveTeamEvent(this, player);
         Dodgebolt.getPlugin(Dodgebolt.class).getServer().getPluginManager().callEvent(event);
+
+        Dodgebolt.getInstance().getGame().broadcast(ChatColor.GRAY + "[" + ChatColor.YELLOW + "!" + ChatColor.GRAY + "] " + getCleanMemberString(player) + ChatColor.RED + " left the " + getColoredName() + " team" + ChatColor.RED + "!");
     }
 
     public void clearPlayers() {
@@ -124,5 +132,48 @@ public class Team {
     public void playSound(Sound sound, float volume, float pitch) {
         for (Player player : getMembersAsPlayers())
             player.playSound(player.getEyeLocation(), sound, volume, pitch);
+    }
+
+    /**
+     * Cleans a player name to be just their displayname colored as their team
+     *
+     * @param player
+     * @return
+     */
+    public String getCleanMemberString(Player player) {
+        return teamColor + ChatColor.stripColor(player.getName());
+    }
+
+    /**
+     *
+     * @return a string that contains player names formatted for clean printing in a string
+     */
+    public String getCleanMembersString() {
+
+        List<Player> players = new ArrayList<>(getMembersAsPlayers());
+
+        // If nobody is on this team just display it as their color
+        if (players.isEmpty())
+            return teamColor + name;
+
+        // If 1 person is on this team, just return them
+        if (players.size() == 1)
+            return getCleanMemberString(players.get(0));
+
+        // If 2 people are on this team, connect them with just and
+        if (players.size() == 2)
+            return getCleanMemberString(players.get(0)) + ChatColor.GRAY + " and " + getCleanMemberString(players.get(1));
+
+        // Do a comma separated list with the last one being connected with and
+        StringBuilder sb = new StringBuilder();
+        // Iterate as normal but don't process last player
+        for (int i = 0; i < players.size()-1; i++) {
+            sb.append(getCleanMemberString(players.get(i))).append(ChatColor.GRAY).append(", ");
+        }
+
+        // For last player add the and
+        sb.append(ChatColor.GRAY + "and ").append(getCleanMemberString(players.get(players.size() - 1)));
+        return sb.toString();
+
     }
 }

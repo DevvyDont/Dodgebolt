@@ -71,7 +71,7 @@ public class Items {
                 int deaths = PlayerStats.getStatistic(player, PlayerStats.PLAYER_DEATHS);
                 int mvps = PlayerStats.getStatistic(player, PlayerStats.MATCH_MVPS);
                 int aces = PlayerStats.getStatistic(player, PlayerStats.ACES);
-                SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+                SimpleDateFormat formatter = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
                 Date date = new Date();
                 ItemStack crown = new ItemStack(helmetType);
                 ItemMeta meta = crown.getItemMeta();
@@ -94,7 +94,7 @@ public class Items {
                         ChatColor.GRAY + ChatColor.BOLD.toString() + "Match MVPs: " + ChatColor.YELLOW + mvps,
                         ChatColor.GRAY + ChatColor.BOLD.toString() + "Aces: " + ChatColor.GOLD + aces,
                         "",
-                        ChatColor.DARK_GRAY + "Crown created: " + ChatColor.ITALIC + formatter.format(date)
+                        ChatColor.DARK_GRAY + "Crown created: " + ChatColor.ITALIC + formatter.format(date) + " EST"
 
                 ));
                 meta.addEnchant(Enchantment.DURABILITY, 10, true);

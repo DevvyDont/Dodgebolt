@@ -218,17 +218,18 @@ public class DodgeboltArena {
         int mirrorMult = mirror ? -1 : 1;
 
         Location originClone = origin.clone();
+        originClone.setYaw(0);
         if (!mirror)
-            originClone.setYaw(180);
+            originClone.setYaw(originClone.getYaw()+180);
 
         return new Location[]{
-                originClone.clone().add(-3 * mirrorMult, 0, 12 * mirrorMult + .5),  // Mid left circle
-                originClone.clone().add(3 * mirrorMult, 0, 12 * mirrorMult + .5),  // Mid right circle
-                originClone.clone().add(-9 * mirrorMult, 0, 9 * mirrorMult + .5),  // Far left circle
-                originClone.clone().add(9 * mirrorMult, 0, 9 * mirrorMult + .5),  // Far right circle
-                originClone.clone().add(0 * mirrorMult, 0, 14 * mirrorMult + .5),  // Mid backish
-                originClone.clone().add(7 * mirrorMult, 0, 14 * mirrorMult + .5),  // Mid backleftish
-                originClone.clone().add(-7 * mirrorMult, 0, 13 * mirrorMult + .5),  // Mid backrightish
+                originClone.clone().add(-3 * mirrorMult, 0, 12 * mirrorMult).toCenterLocation(),  // Mid left circle
+                originClone.clone().add(3 * mirrorMult, 0, 12 * mirrorMult).toCenterLocation(),  // Mid right circle
+                originClone.clone().add(-9 * mirrorMult, 0, 9 * mirrorMult).toCenterLocation(),  // Far left circle
+                originClone.clone().add(9 * mirrorMult, 0, 9 * mirrorMult).toCenterLocation(),  // Far right circle
+                originClone.clone().add(0 * mirrorMult, 0, 14 * mirrorMult).toCenterLocation(),  // Mid backish
+                originClone.clone().add(7 * mirrorMult, 0, 14 * mirrorMult).toCenterLocation(),  // Mid backleftish
+                originClone.clone().add(-7 * mirrorMult, 0, 13 * mirrorMult).toCenterLocation(),  // Mid backrightish
         };
     }
 
@@ -336,6 +337,15 @@ public class DodgeboltArena {
         boolean inZBounds = Math.abs(location.getBlockZ() - origin.getBlockZ()) <= MAX_Z;
 
         return inXBounds && inYBounds && inZBounds;
+    }
+
+    public boolean outOfBowRange(Location location) {
+
+        if (Math.abs(location.getBlockY() - origin.getBlockY()) > 3)
+            return false;
+
+        int offset = Math.abs(origin.getBlockX() - location.getBlockX()) > 5 ? 0 : 1;
+        return Math.abs(origin.getBlockZ() - location.getBlockZ()) < 3 + offset;
     }
 
     public void destroyArena() {

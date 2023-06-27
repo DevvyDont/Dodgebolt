@@ -13,6 +13,7 @@ public class SpectatorSwitchSign extends InteractableSign implements Listener {
 
     public SpectatorSwitchSign(DodgeboltGame game, Location location, BlockFace direction) {
         super(game, location, direction);
+        update();
     }
 
     public void update() {

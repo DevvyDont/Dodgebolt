@@ -81,10 +81,7 @@ public class TeamSwitchSign extends InteractableSign {
             return;
         }
 
-        boolean showColorMessage = !opColorChangeRule || player.isOp();
-
         game.setPlayerTeam(player, team);
-        player.sendMessage(ChatColor.GRAY + "[" + ChatColor.YELLOW + "!" + ChatColor.GRAY + "] " + ChatColor.AQUA + "You joined " + team.getTeamColor() + team.getName() + ChatColor.AQUA + (showColorMessage ? "! Punch the sign while sneaking to change the team color!" : ""));
         update();
     }
 

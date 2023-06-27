@@ -218,6 +218,10 @@ public class MinecraftScoreboardManager implements Listener {
     }
 
     public void showMinecraftScoreboardAttributes(Player player) {
+
+        if (playerScoreboardRestore.containsKey(player.getUniqueId()))
+            return;
+
         playerScoreboardRestore.put(player.getUniqueId(), player.getScoreboard());
         player.setScoreboard(scoreboard);
     }
