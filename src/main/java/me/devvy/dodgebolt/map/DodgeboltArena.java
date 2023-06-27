@@ -327,10 +327,12 @@ public class DodgeboltArena {
 
         int MAX_X = X_ARENA_RADIUS + 1;
         int MAX_Z = Z_ARENA_RADIUS + 1;
-        int MAX_Y = 6;
+        int MAX_PLUS_Y = 4;
+        int MAX_MINUS_Y = -10;
 
         boolean inXBounds = Math.abs(location.getBlockX() - origin.getBlockX()) <= MAX_X;
-        boolean inYBounds = Math.abs(location.getBlockY() - origin.getBlockY()) <= MAX_Y;
+        int yDif = location.getBlockY() - origin.getBlockY();
+        boolean inYBounds = yDif <= MAX_PLUS_Y && yDif >= MAX_MINUS_Y;
         boolean inZBounds = Math.abs(location.getBlockZ() - origin.getBlockZ()) <= MAX_Z;
 
         return inXBounds && inYBounds && inZBounds;

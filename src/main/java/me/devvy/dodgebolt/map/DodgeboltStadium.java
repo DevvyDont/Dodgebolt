@@ -139,7 +139,7 @@ public class DodgeboltStadium {
 
         int MAX_X = X_STADIUM_RADIUS + 1;
         int MAX_Z = Z_STADIUM_RADIUS + 1;
-        int MAX_Y = 15;
+        int MAX_Y = 20;
 
         boolean inXBounds = Math.abs(location.getBlockX() - origin.getBlockX()) <= MAX_X;
         boolean inYBounds = Math.abs(location.getBlockY() - origin.getBlockY()) <= MAX_Y;
