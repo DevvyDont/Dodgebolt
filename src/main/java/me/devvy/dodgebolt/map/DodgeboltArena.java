@@ -154,6 +154,7 @@ public class DodgeboltArena {
             Operation operation = new ClipboardHolder(clipboard)
                     .createPaste(session)
                     .to(BlockVector3.at(origin.getX(), origin.getY(), origin.getZ()))
+                    .ignoreAirBlocks(true)
                     .build();
             Operations.complete(operation);
 
@@ -174,10 +175,6 @@ public class DodgeboltArena {
         generateArena();
         changeTeamColors(currentTeamOneColor, currentTeamTwoColor);
         currentRing = 0;
-
-        for (Entity entity : getOrigin().getWorld().getEntities())
-            if (entity instanceof Item || entity instanceof Arrow)
-                entity.remove();
     }
 
     public void changeTeamColors(ChatColor teamOneColor, ChatColor teamTwoColor) {
@@ -319,6 +316,9 @@ public class DodgeboltArena {
     }
 
     public boolean isInArena(Location location) {
+
+        if (!location.getWorld().equals(origin.getWorld()))
+            return false;
 
         int MAX_X = X_ARENA_RADIUS + 1;
         int MAX_Z = Z_ARENA_RADIUS + 1;

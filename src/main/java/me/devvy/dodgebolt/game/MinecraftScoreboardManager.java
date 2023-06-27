@@ -47,11 +47,6 @@ public class MinecraftScoreboardManager implements Listener {
         team1ScoreboardTeam.setAllowFriendlyFire(true);
         team2ScoreboardTeam.setAllowFriendlyFire(true);
 
-        spectatorScoreboardTeam.setPrefix(ChatColor.DARK_GRAY + "[SPEC] ");
-        spectatorScoreboardTeam.setColor(ChatColor.GRAY);
-        adminScoreboardTeam.setPrefix(ChatColor.DARK_GRAY + "[" + ChatColor.DARK_RED + "ADMIN" + ChatColor.DARK_GRAY + "] ");
-        adminScoreboardTeam.setColor(ChatColor.RED);
-
         sidebar = scoreboard.registerNewObjective("dummy", "dummy", ChatColor.AQUA + ChatColor.BOLD.toString() + "Dodgebolt");
 
         sidebarLineCurrRound = scoreboard.registerNewTeam("CurrRound");
@@ -80,12 +75,6 @@ public class MinecraftScoreboardManager implements Listener {
         sidebarLineTeam2Score.addEntry(ChatColor.values()[0].toString());
         sidebar.getScore(ChatColor.values()[0].toString()).setScore(0);
 
-
-        for (Player player : Bukkit.getOnlinePlayers()) {
-            player.setScoreboard(scoreboard);
-            setSpectatingCosmetics(player);
-        }
-
         delayedUpdate();
 
         new BukkitRunnable() {
@@ -103,13 +92,11 @@ public class MinecraftScoreboardManager implements Listener {
      */
     public void setSpectatingCosmetics(Player player) {
 
-        if (player.isOp()) {
+        if (player.isOp())
             adminScoreboardTeam.addEntry(player.getName());
-            player.setDisplayName(ChatColor.DARK_GRAY + "[" + ChatColor.DARK_RED + "ADMIN" + ChatColor.DARK_GRAY + "] " + ChatColor.RED + ChatColor.stripColor(player.getName()));
-        } else {
+        else
             spectatorScoreboardTeam.addEntry(player.getName());
-            player.setDisplayName(ChatColor.DARK_GRAY + "[SPEC] " + ChatColor.GRAY + ChatColor.stripColor(player.getName()));
-        }
+
 
     }
 
@@ -121,6 +108,11 @@ public class MinecraftScoreboardManager implements Listener {
                 team2ScoreboardTeam.setPrefix(ChatColor.GRAY + "[" + game.getTeam2().getTeamColor() + game.getTeam2().getName() + ChatColor.GRAY + "] ");
                 team1ScoreboardTeam.setColor(game.getTeam1().getTeamColor());
                 team2ScoreboardTeam.setColor(game.getTeam2().getTeamColor());
+
+                spectatorScoreboardTeam.setPrefix(ChatColor.DARK_GRAY + "[SPEC] ");
+                spectatorScoreboardTeam.setColor(ChatColor.GRAY);
+                adminScoreboardTeam.setPrefix(ChatColor.DARK_GRAY + "[" + ChatColor.DARK_RED + "ADMIN" + ChatColor.DARK_GRAY + "] ");
+                adminScoreboardTeam.setColor(ChatColor.RED);
 
                 sidebar.setDisplaySlot(DisplaySlot.SIDEBAR);
 
@@ -217,15 +209,6 @@ public class MinecraftScoreboardManager implements Listener {
 
         }
 
-    }
-
-    @EventHandler
-    public void onPlayerJoin(PlayerJoinEvent event) {
-        event.getPlayer().setScoreboard(scoreboard);
-        team1ScoreboardTeam.removeEntry(event.getPlayer().getName());
-        team2ScoreboardTeam.removeEntry(event.getPlayer().getName());
-
-        setSpectatingCosmetics(event.getPlayer());
     }
 
     @EventHandler

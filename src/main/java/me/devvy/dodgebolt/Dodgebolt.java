@@ -1,9 +1,10 @@
 package me.devvy.dodgebolt;
 
+import me.devvy.dodgebolt.commands.DodgeboltCommand;
 import me.devvy.dodgebolt.game.DodgeboltGame;
 
-import me.devvy.dodgebolt.hologram.HolographicDynamicScoreboard;
 import me.devvy.dodgebolt.util.ConfigManager;
+import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public final class Dodgebolt extends JavaPlugin {
@@ -26,13 +27,36 @@ public final class Dodgebolt extends JavaPlugin {
 
         ConfigManager.setupDefaultConfig();
 
+        try {
+            reload();
+        } catch (IllegalStateException e) {
+            getLogger().warning(e.getMessage());
+            getLogger().warning("When the issue is resolved, be sure to do /dodgebolt reload");
+        }
+
+        DodgeboltCommand dodgeboltCommand = new DodgeboltCommand();
+        getCommand("dodgebolt").setExecutor(dodgeboltCommand);
+        getCommand("dodgebolt").setTabCompleter(dodgeboltCommand);
+
+    }
+
+    public void unload() {
+        if (game != null) {
+            game.endGame();
+            HandlerList.unregisterAll(game);
+            game.reset();
+            game.cleanup();
+        }
+    }
+
+    public void reload() throws IllegalStateException {
+        unload();
         game = new DodgeboltGame();
         getServer().getPluginManager().registerEvents(game, this);
     }
 
     @Override
     public void onDisable() {
-        if (game != null)
-            game.cleanup();
+        unload();
     }
 }

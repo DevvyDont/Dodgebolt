@@ -1,11 +1,13 @@
 package me.devvy.dodgebolt.util;
 
 import me.devvy.dodgebolt.Dodgebolt;
+import org.bukkit.Location;
 import org.bukkit.configuration.file.FileConfiguration;
 
 // Simple functions to get/read configs, might oopify later but this plugin is not very config heavy so maybe at a later time
 public class ConfigManager {
 
+    public final static String ARENA_LOCATION = "arena-location";
     public final static String OP_START_GAME = "op-start-game";
     public final static String OP_CHANGE_SETTINGS = "op-change-settings";
     public final static String OP_CHANGE_COLOR = "op-change-color";
@@ -31,6 +33,14 @@ public class ConfigManager {
         plugin.saveDefaultConfig();
 
 
+    }
+
+    public static Location getArenaLocation() {
+        return Dodgebolt.getInstance().getConfig().getLocation(ARENA_LOCATION, null);
+    }
+
+    public static void setArenaLocation(Location location) {
+        Dodgebolt.getInstance().getConfig().set(ARENA_LOCATION, location);
     }
 
 

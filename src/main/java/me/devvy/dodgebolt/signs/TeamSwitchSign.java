@@ -15,8 +15,6 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
-import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.scheduler.BukkitRunnable;
 
 public class TeamSwitchSign extends InteractableSign {
@@ -97,16 +95,6 @@ public class TeamSwitchSign extends InteractableSign {
                 update();
             }
         }.runTaskLater(Dodgebolt.getPlugin(Dodgebolt.class), ticks);
-    }
-
-    @EventHandler
-    public void onPlayerJoin(PlayerJoinEvent event) {
-        doDelayedUpdate(5);
-    }
-
-    @EventHandler
-    public void onPlayerQuit(PlayerQuitEvent event) {
-        doDelayedUpdate(5);
     }
 
     @EventHandler

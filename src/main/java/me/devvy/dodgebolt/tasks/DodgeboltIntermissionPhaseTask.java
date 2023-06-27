@@ -17,11 +17,11 @@ public class DodgeboltIntermissionPhaseTask extends DodgeboltPhaseTask {
     @Override
     protected void runGameLoop() {
 
-        for (Player player : Bukkit.getOnlinePlayers())
+        for (Player player : game.getAllPlayersInStadium())
             player.sendActionBar(ChatColor.GRAY + "Next round in " + ChatColor.RED + (TIME - unpausedElapsed) + "s");
 
         if (TIME - unpausedElapsed <= 3)
-            for (Player player : Bukkit.getOnlinePlayers())
+            for (Player player : game.getAllPlayersInStadium())
                 if (player.isDead())
                     player.spigot().respawn();
 

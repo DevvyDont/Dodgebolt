@@ -17,7 +17,7 @@ public class DodgeboltPregamePhaseTask extends DodgeboltPhaseTask {
 
         if (inOvertime() || onMatchPoint()) {
             TIME = 7;
-            for (Player p : Bukkit.getOnlinePlayers())
+            for (Player p : game.getAllPlayersInStadium())
                 p.playSound(p.getLocation(), Sound.ENTITY_WITHER_DEATH, 1, 1);
         }
     }
@@ -62,7 +62,7 @@ public class DodgeboltPregamePhaseTask extends DodgeboltPhaseTask {
         int secondsLeft = TIME - unpausedElapsed;
 
         if (secondsLeft > 0) {
-            for (Player player : Bukkit.getOnlinePlayers()) {
+            for (Player player : game.getAllPlayersInStadium()) {
                 player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, getSoundPitch(secondsLeft));
                 player.sendTitle(getTitleText(secondsLeft), ChatColor.YELLOW + "> " + ChatColor.RED + secondsLeft +  ChatColor.YELLOW + " <", 1, 40, 20);
             }

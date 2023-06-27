@@ -23,7 +23,7 @@ public class DodgeboltIngamePhaseTask extends DodgeboltPhaseTask {
         if (unpausedElapsed == OVERTIME_SHATTER_DELAY)
             game.getStadium().getArena().startOvertimeShatter();
 
-        for (Player player : Bukkit.getOnlinePlayers())
+        for (Player player : game.getAllPlayersInStadium())
             player.sendActionBar(game.getBothTeamAliveCountString());
     }
 

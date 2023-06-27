@@ -85,6 +85,7 @@ public class DodgeboltStadium {
             Operation operation = new ClipboardHolder(clipboard)
                     .createPaste(session)
                     .to(BlockVector3.at(origin.getX(), origin.getY(), origin.getZ()))
+                    .ignoreAirBlocks(true)
                     .build();
             Operations.complete(operation);
 
@@ -125,6 +126,22 @@ public class DodgeboltStadium {
         }
 
         arena.changeTeamColors(teamOneColor, teamTwoColor);
+    }
+
+    public boolean isInStadium(Location location) {
+
+        if (!location.getWorld().equals(origin.getWorld()))
+            return false;
+
+        int MAX_X = X_STADIUM_RADIUS + 1;
+        int MAX_Z = Z_STADIUM_RADIUS + 1;
+        int MAX_Y = 15;
+
+        boolean inXBounds = Math.abs(location.getBlockX() - origin.getBlockX()) <= MAX_X;
+        boolean inYBounds = Math.abs(location.getBlockY() - origin.getBlockY()) <= MAX_Y;
+        boolean inZBounds = Math.abs(location.getBlockZ() - origin.getBlockZ()) <= MAX_Z;
+
+        return inXBounds && inYBounds && inZBounds;
     }
 
     public void destroyStadium() {
