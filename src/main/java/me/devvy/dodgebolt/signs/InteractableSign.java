@@ -11,6 +11,7 @@ import org.bukkit.block.data.Rotatable;
 import org.bukkit.block.data.type.WallSign;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
@@ -73,6 +74,15 @@ public abstract class InteractableSign implements Listener {
             location.getBlock().setType(Material.OAK_WALL_SIGN);
             updateSign();
         }
+    }
+
+    public void destroy() {
+        location.getBlock().breakNaturally();
+        HandlerList.unregisterAll(this);
+    }
+
+    public Location getLocation() {
+        return location.clone();
     }
 
     @EventHandler

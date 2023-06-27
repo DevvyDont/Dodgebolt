@@ -4,3 +4,6 @@ main: me.devvy.dodgebolt.Dodgebolt
 api-version: 1.16
 prefix: Dodgebolt
 depend: [WorldEdit]
+commands:
+  dodgebolt:
+    description: Commands used to interact with dodgebolt

@@ -42,7 +42,7 @@ public final class Dodgebolt extends JavaPlugin {
 
     public void unload() {
         if (game != null) {
-            game.endGame();
+            game.endGame(true);
             HandlerList.unregisterAll(game);
             game.reset();
             game.cleanup();

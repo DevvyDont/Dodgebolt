@@ -14,6 +14,10 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scoreboard.*;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
 public class MinecraftScoreboardManager implements Listener {
 
     private final DodgeboltGame game;
@@ -34,6 +38,8 @@ public class MinecraftScoreboardManager implements Listener {
     org.bukkit.scoreboard.Team sidebarLineTeam2Score;
 
     Objective sidebar;
+
+    private Map<UUID, Scoreboard> playerScoreboardRestore = new HashMap<>();
 
     public MinecraftScoreboardManager(DodgeboltGame game) {
         this.game = game;
@@ -209,6 +215,20 @@ public class MinecraftScoreboardManager implements Listener {
 
         }
 
+    }
+
+    public void showMinecraftScoreboardAttributes(Player player) {
+        playerScoreboardRestore.put(player.getUniqueId(), player.getScoreboard());
+        player.setScoreboard(scoreboard);
+    }
+
+    public void hideMinecraftScoreboardAttributes(Player player) {
+
+        if (!playerScoreboardRestore.containsKey(player.getUniqueId()))
+            return;
+
+        Scoreboard oldScoreboard = playerScoreboardRestore.remove(player.getUniqueId());
+        player.setScoreboard(oldScoreboard);
     }
 
     @EventHandler

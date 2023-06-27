@@ -26,6 +26,7 @@ import org.bukkit.entity.Item;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -53,8 +54,6 @@ public class DodgeboltArena {
         this.origin = origin;
         this.spawn = origin.clone().add(0, 6, 0);
         this.spawn.setYaw(90);
-
-        this.origin.getWorld().setDifficulty(Difficulty.PEACEFUL);
 
         ArrayList<Location> ring1Locs = new ArrayList<>();
         ArrayList<Location> ring2locs = new ArrayList<>();
@@ -136,12 +135,19 @@ public class DodgeboltArena {
 
         String path = Dodgebolt.getPlugin(Dodgebolt.class).getDataFolder().getParent() + schematicPath;
         File file = new File(path);
+
+        if (Dodgebolt.getInstance().getServer().getPluginManager().getPlugin("WorldEdit") == null)
+            throw new IllegalStateException("WorldEdit must be installed alongside this plugin! Arena generation depends on it");
+
+        if (!file.exists())
+            throw new IllegalStateException("Could not find the arena schematic!!! It should be located at '" + path + "', download given schematic from the github releases tab");
+
         ClipboardFormat format = ClipboardFormats.findByFile(file);
 
         if (format == null)
             throw new IllegalStateException("Could not find the arena schematic!!! It should be located at '" + path + "', download given schematic from the github releases tab");
 
-        try (ClipboardReader reader = format.getReader(new FileInputStream(file))) {
+        try (ClipboardReader reader = format.getReader(Files.newInputStream(file.toPath()))) {
             clipboard = reader.read();
         } catch (IOException e) {
             e.printStackTrace();
@@ -154,7 +160,6 @@ public class DodgeboltArena {
             Operation operation = new ClipboardHolder(clipboard)
                     .createPaste(session)
                     .to(BlockVector3.at(origin.getX(), origin.getY(), origin.getZ()))
-                    .ignoreAirBlocks(true)
                     .build();
             Operations.complete(operation);
 

@@ -10,3 +10,5 @@ round-win-limit: 5
 win-by-2: true
 # Should we play pigstep if we have a 1v1?
 one-vs-one-pigstep: true
+# Where is the arena located at? Set this using /dodgebolt setlocation
+arena-location:

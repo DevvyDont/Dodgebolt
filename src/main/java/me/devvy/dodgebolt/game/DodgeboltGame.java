@@ -3,7 +3,6 @@ package me.devvy.dodgebolt.game;
 import me.devvy.dodgebolt.Dodgebolt;
 import me.devvy.dodgebolt.events.TeamColorChangeEvent;
 import me.devvy.dodgebolt.hologram.HolographicDynamicScoreboard;
-import me.devvy.dodgebolt.hologram.PlayerEntry;
 import me.devvy.dodgebolt.map.DodgeboltStadium;
 import me.devvy.dodgebolt.signs.*;
 import me.devvy.dodgebolt.tasks.DodgeboltIngamePhaseTask;
@@ -19,7 +18,6 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
-import org.bukkit.event.block.BlockFromToEvent;
 import org.bukkit.event.entity.*;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryType;
@@ -29,7 +27,6 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
 import org.bukkit.projectiles.ProjectileSource;
 import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.util.Vector;
 
 import java.util.*;
 
@@ -40,6 +37,8 @@ public class DodgeboltGame implements Listener {
     private final Team team2;
     private DodgeboltPhaseTask currentPhaseTask = null;
     private DodgeboltGameState state;
+
+    private final List<InteractableSign> signs = new ArrayList<>();
 
     private DodgeboltArrowSpawners arrowSpawners;
 
@@ -61,11 +60,11 @@ public class DodgeboltGame implements Listener {
         if (arenaLocation == null)
             throw new IllegalStateException("Arena location is not set! Not generating arena yet...");
 
-        startingRoundsToWin = Dodgebolt.getPlugin(Dodgebolt.class).getConfig().getInt(ConfigManager.ROUND_WIN_LIMIT);
-        roundsToWin = startingRoundsToWin;
-
         stadium = new DodgeboltStadium(arenaLocation);
         stadium.generateStadium();
+
+        startingRoundsToWin = Dodgebolt.getPlugin(Dodgebolt.class).getConfig().getInt(ConfigManager.ROUND_WIN_LIMIT);
+        roundsToWin = startingRoundsToWin;
 
         team1 = new Team(ChatColor.BLUE);
         team2 = new Team(ChatColor.LIGHT_PURPLE);
@@ -74,14 +73,14 @@ public class DodgeboltGame implements Listener {
 
         state = DodgeboltGameState.WAITING;
 
-        new TeamSwitchSign(this, stadium.getSpawn().clone().add(-2, 1, 1), BlockFace.EAST, team1);
-        new TeamSwitchSign(this, stadium.getSpawn().clone().add(-2, 1, -1),BlockFace.EAST, team2);
-        new SpectatorSwitchSign(this, stadium.getSpawn().clone().add( -2, 1, 0), BlockFace.EAST);
-        new StartGameSign(this, stadium.getSpawn().clone().add(-2, 2, 0), BlockFace.EAST);
+        signs.add(new TeamSwitchSign(this, stadium.getSpawn().clone().add(-2-18, 1, 1), BlockFace.EAST, team1));
+        signs.add(new TeamSwitchSign(this, stadium.getSpawn().clone().add(-2-18, 1, -1),BlockFace.EAST, team2));
+        signs.add(new SpectatorSwitchSign(this, stadium.getSpawn().clone().add( -2-18, 1, 0), BlockFace.EAST));
+        signs.add(new StartGameSign(this, stadium.getSpawn().clone().add(-2-18, 2, 0), BlockFace.EAST));
 
-        new ShuffleTeamsSign(this, stadium.getSpawn().clone().add(-2, 2, -2), BlockFace.EAST);
-        new ScoreLimitSign(this, stadium.getSpawn().clone().add(-2, 2, 2), BlockFace.EAST);
-        new BowDamageSign(this, stadium.getSpawn().clone().add(-2, 2, 3), BlockFace.EAST);
+        signs.add(new ShuffleTeamsSign(this, stadium.getSpawn().clone().add(-2-18, 2, -2), BlockFace.EAST));
+        signs.add(new ScoreLimitSign(this, stadium.getSpawn().clone().add(-2-18, 2, 2), BlockFace.EAST));
+        signs.add(new BowDamageSign(this, stadium.getSpawn().clone().add(-2-18, 2, 3), BlockFace.EAST));
 
         gameStatisticsManager = new GameStatisticsManager();
         scoreboardManager = new MinecraftScoreboardManager(this);
@@ -317,13 +316,9 @@ public class DodgeboltGame implements Listener {
                 if (player.isDead())
                     player.spigot().respawn();
 
-                player.setGameMode(GameMode.ADVENTURE);
-                player.setAllowFlight(false);
-                player.getInventory().clear();
                 player.teleport(spawn);
                 player.setGlowing(true);
                 player.setHealth(20);
-                player.setInvulnerable(false);
                 givePlayerKit(player);
             }
         }
@@ -453,7 +448,6 @@ public class DodgeboltGame implements Listener {
         for (Player player : getAllPlayersInStadium()) {
 
             player.setGlowing(false);
-            player.setAllowFlight(true);
             player.stopSound(Sound.MUSIC_DISC_PIGSTEP);
         }
 
@@ -462,7 +456,7 @@ public class DodgeboltGame implements Listener {
 
         // If one of the teams hit the score limit end the game
         if (team1.getScore() >= roundsToWin || team2.getScore() >= roundsToWin) {
-            endGame();
+            endGame(false);
             return;
         }
 
@@ -481,8 +475,9 @@ public class DodgeboltGame implements Listener {
     public Collection<Player> getAllPlayersInStadium() {
         List<Player> players = new ArrayList<>();
 
-        for (Player p : getAllPlayersInStadium())
-                players.add(p);
+        for (Player p : Bukkit.getOnlinePlayers())
+                if (getStadium().isInStadium(p.getLocation()))
+                    players.add(p);
 
         return players;
     }
@@ -496,32 +491,37 @@ public class DodgeboltGame implements Listener {
 
 
 
-    public void endGame() {
-
-        // Clear everyones inventories and let them roam around a bit
-        for (Player player : getAllPlayersOnTeams()) {
-            player.setGameMode(GameMode.SURVIVAL);
-            player.setAllowFlight(true);
-        }
+    public void endGame(boolean byForce) {
 
         // Tell everyone the results
         announceMatchResults();
 
+        if (byForce)
+            teleportPlayersToOriginAndReset();
+        else
+            teleportPlayersToOriginAndResetLater();
+
+    }
+
+    public void teleportPlayersToOriginAndReset() {
+        for (Player player : getAllPlayersInStadium()) {
+
+            if (player.isDead())
+                player.spigot().respawn();
+
+            Location loc = stadium.getSpawn().add(Math.random()*5 + 5.5, 0, Math.random()*5 - 2.5);
+            player.teleport(loc);
+        }
+
+        reset();
+    }
+
+    public void teleportPlayersToOriginAndResetLater() {
         // Make a task that will respawn everybody atspawn and restore the game
         new BukkitRunnable() {
             @Override
             public void run() {
-
-                for (Player player : getAllPlayersInStadium()) {
-
-                    if (player.isDead())
-                        player.spigot().respawn();
-
-                    player.teleport(stadium.getSpawn().clone().add(Math.random()*2 + 10.5, 0, Math.random()*2 - .5).setDirection(new Vector(180, 0, 0)));
-                }
-
-                reset();
-
+                teleportPlayersToOriginAndReset();
             }
         }.runTaskLater(Dodgebolt.getPlugin(Dodgebolt.class), 120);
     }
@@ -592,6 +592,17 @@ public class DodgeboltGame implements Listener {
     public void cleanup() {
         stadium.getArena().destroyArena();
 
+        // Destroy signs
+        for (InteractableSign sign : signs)
+            sign.destroy();
+
+        // Go back to original scoreboard
+        for (Player p : getAllPlayersInStadium())
+            scoreboardManager.hideMinecraftScoreboardAttributes(p);
+
+        // Delete the hologram scoreboard
+        mainHoloScoreboard.hide();
+
         if (currentPhaseTask != null)
             currentPhaseTask.cancel();
 
@@ -606,8 +617,6 @@ public class DodgeboltGame implements Listener {
 
         setSpectating(event.getPlayer());
         event.getPlayer().teleport(stadium.getSpawn());
-        event.getPlayer().setGameMode(state == DodgeboltGameState.WAITING ? GameMode.SURVIVAL : GameMode.ADVENTURE);
-        event.getPlayer().setAllowFlight(true);
     }
 
     @EventHandler

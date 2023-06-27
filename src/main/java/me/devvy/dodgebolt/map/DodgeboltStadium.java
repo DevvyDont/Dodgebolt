@@ -13,17 +13,15 @@ import com.sk89q.worldedit.function.operation.Operations;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.session.ClipboardHolder;
 import me.devvy.dodgebolt.Dodgebolt;
-import me.devvy.dodgebolt.map.DodgeboltArena;
 import me.devvy.dodgebolt.util.ColorTranslator;
 import org.bukkit.ChatColor;
-import org.bukkit.Difficulty;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Files;
 
 public class DodgeboltStadium {
 
@@ -39,9 +37,8 @@ public class DodgeboltStadium {
 
     public DodgeboltStadium(Location origin) {
         this.origin = origin;
-        this.spawn = origin.clone().add(-18, 6, 0);
+        this.spawn = origin.clone().add(0, 6, 0);
         this.spawn.setYaw(90);
-        this.origin.getWorld().setDifficulty(Difficulty.PEACEFUL);
         this.arena = new DodgeboltArena(origin);
     }
 
@@ -67,12 +64,19 @@ public class DodgeboltStadium {
 
         String path = Dodgebolt.getPlugin(Dodgebolt.class).getDataFolder().getParent() + schematicPath;
         File file = new File(path);
+
+        if (Dodgebolt.getInstance().getServer().getPluginManager().getPlugin("WorldEdit") == null)
+            throw new IllegalStateException("WorldEdit must be installed alongside this plugin! Arena generation depends on it");
+
+        if (!file.exists())
+            throw new IllegalStateException("Could not find the stadium schematic!!! It should be located at '" + path + "', download given schematic from the github releases tab");
+
         ClipboardFormat format = ClipboardFormats.findByFile(file);
 
         if (format == null)
             throw new IllegalStateException("Could not find the stadium schematic!!! It should be located at '" + path + "', download given schematic from the github releases tab");
 
-        try (ClipboardReader reader = format.getReader(new FileInputStream(file))) {
+        try (ClipboardReader reader = format.getReader(Files.newInputStream(file.toPath()))) {
             clipboard = reader.read();
         } catch (IOException e) {
             e.printStackTrace();

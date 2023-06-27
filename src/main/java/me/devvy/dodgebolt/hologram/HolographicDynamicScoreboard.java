@@ -25,9 +25,6 @@ public class HolographicDynamicScoreboard {
     public HolographicDynamicScoreboard(GameStatisticsManager gameStatisticsManager, Location location) {
         this.gameStatisticsManager = gameStatisticsManager;
         this.location = location;
-
-        for (ArmorStand as : location.getWorld().getEntitiesByClass(ArmorStand.class))
-            as.remove();
     }
 
     public void trackPlayer(UUID id) {
