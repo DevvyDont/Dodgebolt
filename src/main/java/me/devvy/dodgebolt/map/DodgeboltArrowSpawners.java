@@ -1,7 +1,9 @@
-package me.devvy.dodgebolt.game;
+package me.devvy.dodgebolt.map;
 
-import com.destroystokyo.paper.event.entity.ProjectileCollideEvent;
 import me.devvy.dodgebolt.Dodgebolt;
+import me.devvy.dodgebolt.game.DodgeboltGame;
+import me.devvy.dodgebolt.game.DodgeboltGameState;
+import me.devvy.dodgebolt.util.Items;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
@@ -10,7 +12,6 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.*;
@@ -45,28 +46,6 @@ public class DodgeboltArrowSpawners implements Listener {
 
     public void delete() {
         HandlerList.unregisterAll(this);
-    }
-
-    @EventHandler
-    public void onArrowCollide(ProjectileHitEvent event) {
-
-        // Monkey fix for the ceiling
-        int yOffset = event.getHitBlockFace() == BlockFace.DOWN ? -1 : 0;
-
-        Item item = event.getEntity().getWorld().dropItem(event.getEntity().getLocation().add(0, yOffset, 0), new ItemStack(Material.ARROW));
-        item.setGlowing(true);
-        item.setVelocity(event.getEntity().getVelocity().normalize().multiply(-.1));
-        event.getEntity().remove();
-    }
-
-    @EventHandler(priority = EventPriority.LOW)
-    public void onStrayArrowCollide(ProjectileCollideEvent event) {
-
-        if (game.getState() != DodgeboltGameState.INGAME)
-            return;
-
-        if (event.getEntity().getShooter() == null && event.getCollidedWith() instanceof Player)
-            event.setCancelled(true);
     }
 
     @EventHandler

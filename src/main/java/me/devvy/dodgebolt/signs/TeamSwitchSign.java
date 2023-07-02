@@ -43,11 +43,14 @@ public class TeamSwitchSign extends InteractableSign {
             return;
         }
 
-        boolean opColorChangeRule = Dodgebolt.getPlugin(Dodgebolt.class).getConfig().getBoolean(ConfigManager.OP_CHANGE_COLOR);
+        if (game.isOnlyAdminsCanEdit() && !player.isOp()) {
+            player.sendMessage(ChatColor.GRAY + "[" + ChatColor.YELLOW + "!" + ChatColor.GRAY + "] " + ChatColor.RED + "Only admins can modify teams right now!");
+            return;
+        }
 
         if (player.isSneaking()) {
 
-            if (opColorChangeRule && !player.isOp()) {
+            if (game.isOnlyAdminsCanEdit() && !player.isOp()) {
                 player.sendMessage(ChatColor.GRAY + "[" + ChatColor.DARK_RED + "!" + ChatColor.GRAY + "] " + ChatColor.RED + "You must be op to change team color!");
                 return;
             }

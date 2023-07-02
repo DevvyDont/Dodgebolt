@@ -1,10 +1,14 @@
 package me.devvy.dodgebolt.game;
 
 import me.devvy.dodgebolt.Dodgebolt;
-import me.devvy.dodgebolt.events.TeamColorChangeEvent;
+import me.devvy.dodgebolt.events.*;
 import me.devvy.dodgebolt.hologram.HolographicDynamicScoreboard;
+import me.devvy.dodgebolt.map.DodgeboltArrowSpawners;
 import me.devvy.dodgebolt.map.DodgeboltStadium;
 import me.devvy.dodgebolt.signs.*;
+import me.devvy.dodgebolt.statistics.GameStatisticsManager;
+import me.devvy.dodgebolt.statistics.MinecraftScoreboardManager;
+import me.devvy.dodgebolt.statistics.RoundStatistics;
 import me.devvy.dodgebolt.tasks.DodgeboltIngamePhaseTask;
 import me.devvy.dodgebolt.tasks.DodgeboltIntermissionPhaseTask;
 import me.devvy.dodgebolt.tasks.DodgeboltPhaseTask;
@@ -20,14 +24,12 @@ import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.*;
-import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.*;
-import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.LeatherArmorMeta;
-import org.bukkit.projectiles.ProjectileSource;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.*;
@@ -47,8 +49,10 @@ public class DodgeboltGame implements Listener {
     private final MinecraftScoreboardManager scoreboardManager;
 
     private final GameStatisticsManager gameStatisticsManager;
+    private final DodgeboltGameAnnouncements announcer;
 
     private final HolographicDynamicScoreboard mainHoloScoreboard;
+    private boolean useSessionScoreboard;
 
     private final PlayerInventoryStower inventoryStower;
 
@@ -56,6 +60,8 @@ public class DodgeboltGame implements Listener {
     private int roundsToWin;
 
     private int bowDamagePercent = 100;
+
+    private boolean onlyAdminsCanEdit;
 
     public DodgeboltGame() {
 
@@ -67,6 +73,7 @@ public class DodgeboltGame implements Listener {
         stadium = new DodgeboltStadium(arenaLocation);
         stadium.generateStadium();
 
+        setOnlyAdminsCanEdit(Dodgebolt.getInstance().getConfig().getBoolean(ConfigManager.OP_CHANGE_SETTINGS, true));
         startingRoundsToWin = Dodgebolt.getPlugin(Dodgebolt.class).getConfig().getInt(ConfigManager.ROUND_WIN_LIMIT);
         roundsToWin = startingRoundsToWin;
 
@@ -76,17 +83,22 @@ public class DodgeboltGame implements Listener {
         stadium.changeTeamColors(team1.getTeamColor(), team2.getTeamColor());
 
         state = DodgeboltGameState.WAITING;
+        useSessionScoreboard = false;
 
         signs.add(new TeamSwitchSign(this, stadium.getSpawn().clone().add(-2-18, 1, 1), BlockFace.EAST, team1));
         signs.add(new TeamSwitchSign(this, stadium.getSpawn().clone().add(-2-18, 1, -1),BlockFace.EAST, team2));
         signs.add(new SpectatorSwitchSign(this, stadium.getSpawn().clone().add( -2-18, 1, 0), BlockFace.EAST));
         signs.add(new StartGameSign(this, stadium.getSpawn().clone().add(-2-18, 2, 0), BlockFace.EAST));
 
-        signs.add(new ShuffleTeamsSign(this, stadium.getSpawn().clone().add(-2-18, 2, -2), BlockFace.EAST));
         signs.add(new ScoreLimitSign(this, stadium.getSpawn().clone().add(-2-18, 2, 2), BlockFace.EAST));
         signs.add(new BowDamageSign(this, stadium.getSpawn().clone().add(-2-18, 2, 3), BlockFace.EAST));
 
+        signs.add(new ShuffleTeamsSign(this, stadium.getSpawn().clone().add(-2-18, 2, -2), BlockFace.EAST));
+        signs.add(new AdminModeSign(this, stadium.getSpawn().clone().add(-2-18, 2, -4), BlockFace.EAST));
+        signs.add(new UseSessionScoreboard(this, stadium.getSpawn().clone().add(-2-18, 1, -4), BlockFace.EAST));
+
         gameStatisticsManager = new GameStatisticsManager();
+        announcer = new DodgeboltGameAnnouncements();
         scoreboardManager = new MinecraftScoreboardManager(this);
         Dodgebolt.getPlugin(Dodgebolt.class).getServer().getPluginManager().registerEvents(scoreboardManager, Dodgebolt.getPlugin(Dodgebolt.class));
         inventoryStower = new PlayerInventoryStower();
@@ -95,6 +107,30 @@ public class DodgeboltGame implements Listener {
 
         for (Player p : getAllPlayersInStadium())
             playerWalkedInStadium(p);
+    }
+
+    public GameStatisticsManager getGameStatisticsManager() {
+        return gameStatisticsManager;
+    }
+
+    public DodgeboltGameAnnouncements getAnnouncer() {
+        return announcer;
+    }
+
+    public boolean isOnlyAdminsCanEdit() {
+        return onlyAdminsCanEdit;
+    }
+
+    public void setOnlyAdminsCanEdit(boolean onlyAdminsCanEdit) {
+        this.onlyAdminsCanEdit = onlyAdminsCanEdit;
+    }
+
+    public boolean useSessionScoreboard() {
+        return useSessionScoreboard;
+    }
+
+    public void setUseSessionScoreboard(boolean useSessionScoreboard) {
+        this.useSessionScoreboard = useSessionScoreboard;
     }
 
     public void shuffleTeams(boolean includeSpectators) {
@@ -247,20 +283,13 @@ public class DodgeboltGame implements Listener {
         getTeam1().setScore(0);
         getTeam2().setScore(0);
 
-        gameStatisticsManager.clear();
-        mainHoloScoreboard.hide();
-        mainHoloScoreboard.clearPlayers();
-
-        // Track all players for the scoreboard
-        for (Player p : getTeam1().getMembersAsPlayers())
-            mainHoloScoreboard.trackPlayer(p.getUniqueId());
-        for (Player p : getTeam2().getMembersAsPlayers())
-            mainHoloScoreboard.trackPlayer(p.getUniqueId());
+        gameStatisticsManager.clearMatchAndRoundStats();
+        mainHoloScoreboard.delete();
 
         for (Player p : getAllPlayersInStadium())
             scoreboardManager.showMinecraftScoreboardAttributes(p);
 
-        mainHoloScoreboard.update();
+        mainHoloScoreboard.update(useSessionScoreboard());
 
         startNewRound();
     }
@@ -271,15 +300,7 @@ public class DodgeboltGame implements Listener {
         if (team == null)
             return;
 
-        ItemStack boots = new ItemStack(Material.LEATHER_BOOTS);
-        LeatherArmorMeta bootMeta = (LeatherArmorMeta) boots.getItemMeta();
-        bootMeta.setColor(ColorTranslator.translateChatColorToColor(team.getTeamColor()));
-        bootMeta.setUnbreakable(true);
-        bootMeta.addItemFlags(ItemFlag.HIDE_UNBREAKABLE);
-        bootMeta.setDisplayName(team.getTeamColor() + team.getName() + " Boots");
-        boots.setItemMeta(bootMeta);
-
-        player.getInventory().setBoots(boots);
+        player.getInventory().setBoots(Items.getBoots(team));
         player.getInventory().addItem(Items.getDodgeboltBow());
     }
 
@@ -290,16 +311,9 @@ public class DodgeboltGame implements Listener {
 
         setState(DodgeboltGameState.PREGAME_COUNTDOWN);
 
-        // Set the time of the world based on how far the game is
-//        float gamePercent = (team1.getScore() + team2.getScore() + 1f) / (roundsToWin * 2f - 1f);
-//        int newTick = (int) (14000 * gamePercent);
-//        stadium.getOrigin().getWorld().setTime(newTick);
-
         boolean playersAreHere = playersAreHereCheck();
         if (!playersAreHere)
             return;
-
-        gameStatisticsManager.newRound(getCurrentRoundNumber());
 
         // Fix the arena
         stadium.getArena().restoreArena();
@@ -309,6 +323,10 @@ public class DodgeboltGame implements Listener {
 
         // Teleport players to their spawns and give them necessary gear
         toStartingPositions();
+
+        // Get rid of items laying on the ground that are dodgebolt items
+        Items.removeDodgeboltEntities(Item.class);
+        Items.removeDodgeboltEntities(Arrow.class);
 
         // Create a task to start the game
         currentPhaseTask = new DodgeboltPregamePhaseTask(this);
@@ -355,7 +373,9 @@ public class DodgeboltGame implements Listener {
                 player.teleport(spawn);
                 player.setGlowing(true);
                 player.setHealth(20);
+                Items.clearDodgeboltItems(player);
                 givePlayerKit(player);
+                player.setKiller(null);
             }
         }
 
@@ -367,6 +387,10 @@ public class DodgeboltGame implements Listener {
         boolean playersAreHere = playersAreHereCheck();
         if (!playersAreHere)
             return;
+
+        // Get rid of items laying on the ground that are dodgebolt items
+        Items.removeDodgeboltEntities(Item.class);
+        Items.removeDodgeboltEntities(Arrow.class);
 
         currentPhaseTask = new DodgeboltIngamePhaseTask(this);
         currentPhaseTask.runTaskTimer(Dodgebolt.getPlugin(Dodgebolt.class), 0, DodgeboltIngamePhaseTask.PERIOD);
@@ -401,83 +425,36 @@ public class DodgeboltGame implements Listener {
         stadium.getArena().stopOvertimeShatter();
         currentPhaseTask.cancel();
 
+        Team loser = getOpposingTeam(winner);
+        new RoundEndedEvent(winner, loser).callEvent();
+
         // First we announce the past round results
         // Check for special win condition, ace > team ace > flawless > clutch
         RoundStatistics roundStatistics = gameStatisticsManager.getRoundStatistics(getCurrentRoundNumber());
 
         Player acedPlayer = roundStatistics.getWhoAced(winner);
-        Team loser = getOpposingTeam(winner);
 
-        if (acedPlayer != null) {
-            // Announce an ace win
-            broadcast(String.format("%s[%s!%s] %s%s %sACED %sand won the round for %s%s%s!", ChatColor.GRAY, ChatColor.YELLOW, ChatColor.GRAY, winner.getTeamColor(), acedPlayer.getName(), ChatColor.GOLD, ChatColor.GRAY, winner.getTeamColor(), winner.getName(), ChatColor.GRAY));
-            winner.playSound(Sound.UI_TOAST_CHALLENGE_COMPLETE, .75f,1);
-            playSoundToSpectators(Sound.UI_TOAST_CHALLENGE_COMPLETE, .75f,1);
-            loser.playSound(Sound.ENTITY_WITHER_DEATH, .75f, 1);
-
-            winner.sendTitle(String.format("%s%sACE", ChatColor.GOLD, ChatColor.BOLD), String.format("%s%s %skilled the entire enemy team!", winner.getTeamColor(), acedPlayer.getName(), ChatColor.GRAY), 10, 100, 40);
-            sendTitleToSpectators(String.format("%s%sACE", ChatColor.GOLD, ChatColor.BOLD), String.format("%s%s %skilled the entire enemy team!", winner.getTeamColor(), acedPlayer.getName(), ChatColor.GRAY), 10, 100, 40);
-            loser.sendTitle(String.format("%s%sACE", ChatColor.DARK_PURPLE, ChatColor.BOLD), String.format("%s%s %skilled the entire enemy team!", winner.getTeamColor(), acedPlayer.getName(), ChatColor.GRAY), 10, 100, 40);
-
-            PlayerStats.addStatistic(acedPlayer, PlayerStats.ACES);
-
-        } else if (roundStatistics.teamAced(winner)) {
-            // Announce a team ace win
-            broadcast(String.format("%s[%s!%s] All members of %s%s %sgot a kill and won the round!", ChatColor.GRAY, ChatColor.YELLOW, ChatColor.GRAY, winner.getTeamColor(), winner.getName(), ChatColor.GRAY));
-            winner.playSound(Sound.ENTITY_PLAYER_LEVELUP, .75f,1);
-            playSoundToSpectators(Sound.ENTITY_PLAYER_LEVELUP, .75f,1);
-            loser.playSound(Sound.ENTITY_ENDERMAN_DEATH, .75f, .75f);
-
-            winner.sendTitle(String.format("%s%sTEAM ACE", ChatColor.GREEN, ChatColor.BOLD), String.format("%sTeam %s%s %sall got one kill!", ChatColor.GRAY, winner.getTeamColor(), winner.getName(), ChatColor.GRAY), 10, 100, 40);
-            sendTitleToSpectators(String.format("%s%sTEAM ACE", ChatColor.GREEN, ChatColor.BOLD), String.format("%sTeam %s%s %sall got one kill!", ChatColor.GRAY, winner.getTeamColor(), winner.getName(), ChatColor.GRAY), 10, 100, 40);
-            loser.sendTitle(String.format("%s%sTEAM ACE", ChatColor.RED, ChatColor.BOLD), String.format("%sTeam %s%s %sall got one kill!", ChatColor.GRAY, winner.getTeamColor(), winner.getName(), ChatColor.GRAY), 10, 100, 40);
-        } else if (roundStatistics.teamFlawlessed(winner)) {
-            // Announce a flawless win
-            broadcast(String.format("%s[%s!%s] All members of %s%s %slived and won the round!", ChatColor.GRAY, ChatColor.YELLOW, ChatColor.GRAY, winner.getTeamColor(), winner.getName(), ChatColor.GRAY));
-            winner.playSound(Sound.ENTITY_PLAYER_LEVELUP, .75f,1);
-            playSoundToSpectators(Sound.ENTITY_PLAYER_LEVELUP, .75f,1);
-            loser.playSound(Sound.ENTITY_ENDERMAN_DEATH, .75f, .75f);
-
-            winner.sendTitle(String.format("%s%sFLAWLESS", ChatColor.GREEN, ChatColor.BOLD), String.format("%sTeam %s%s %sall stayed alive!", ChatColor.GRAY, winner.getTeamColor(), winner.getName(), ChatColor.GRAY), 10, 100, 40);
-            sendTitleToSpectators(String.format("%s%sFLAWLESS", ChatColor.GREEN, ChatColor.BOLD), String.format("%sTeam %s%s %sall stayed alive!", ChatColor.GRAY, winner.getTeamColor(), winner.getName(), ChatColor.GRAY), 10, 100, 40);
-            loser.sendTitle(String.format("%s%sFLAWLESS", ChatColor.RED, ChatColor.BOLD), String.format("%sTeam %s%s %sall stayed alive!", ChatColor.GRAY, winner.getTeamColor(), winner.getName(), ChatColor.GRAY), 10, 100, 40);
-        } else if (roundStatistics.teamClutched(winner)) {
-            // Announce a clutch win
-            broadcast(String.format("%s[%s!%s] %s%s %sclutched and won the round for %s%s%s!", ChatColor.GRAY, ChatColor.YELLOW, ChatColor.GRAY, winner.getTeamColor(), winner.getPlayersAlive().iterator().next().getName(), ChatColor.GRAY, winner.getTeamColor(), winner.getName(), ChatColor.GRAY));
-            winner.playSound(Sound.ENTITY_VILLAGER_CELEBRATE, .75f,1);
-            playSoundToSpectators(Sound.ENTITY_VILLAGER_CELEBRATE, .75f,1);
-            loser.playSound(Sound.ENTITY_ENDERMAN_DEATH, .75f, 1.5f);
-
-            winner.sendTitle(String.format("%s%sCLUTCH", ChatColor.GREEN, ChatColor.BOLD), String.format("%s%s %swon the round!", winner.getTeamColor(), winner.getPlayersAlive().iterator().next().getName(), ChatColor.GRAY), 10, 100, 40);
-            sendTitleToSpectators(String.format("%s%sCLUTCH", ChatColor.GREEN, ChatColor.BOLD), String.format("%s%s %swon the round!", winner.getTeamColor(), winner.getPlayersAlive().iterator().next().getName(), ChatColor.GRAY), 10, 100, 40);
-            loser.sendTitle(String.format("%s%sCLUTCH", ChatColor.RED, ChatColor.BOLD), String.format("%s%s %swon the round!", winner.getTeamColor(), winner.getPlayersAlive().iterator().next().getName(), ChatColor.GRAY), 10, 100, 40);
-        } else {
-            // Announce a normal round win
-            broadcast(String.format("%s[%s!%s] %s%s %swon the round!", ChatColor.GRAY, ChatColor.YELLOW, ChatColor.GRAY, winner.getTeamColor(), winner.getName(), ChatColor.GRAY));
-            winner.playSound(Sound.ENTITY_PLAYER_LEVELUP, .75f,1);
-            playSoundToSpectators(Sound.ENTITY_PLAYER_LEVELUP, .75f,1);
-            loser.playSound(Sound.ENTITY_VILLAGER_NO, .75f, .75f);
-
-            winner.sendTitle(String.format("%sROUND WIN", ChatColor.GREEN), "", 10, 100, 40);
-            sendTitleToSpectators(String.format("%sROUND WIN", ChatColor.GREEN), "", 10, 100, 40);
-            loser.sendTitle(String.format("%sROUND LOSS", ChatColor.RED), "", 10, 100, 40);
-        }
-
-        // Other stat tracking stuff we have to do
-        for (Player winningMember : winner.getMembersAsPlayers()) {
-            Fireworks.spawnVictoryFireworks(winningMember, ColorTranslator.translateChatColorToColor(winner.getTeamColor()));
-            PlayerStats.addStatistic(winningMember, PlayerStats.PLAYER_ROUND_WINS);
-        }
+        // Decide what event occured to we can inform the players
+        if (acedPlayer != null)
+            new DodgeboltPlayerAcedEvent(acedPlayer).callEvent();
+        else if (roundStatistics.teamAced(winner))
+            new DodgeboltTeamAcedEvent(winner).callEvent();
+        else if (roundStatistics.teamFlawlessed(winner))
+            new DodgeboltTeamFlawlessedEvent(winner).callEvent();
+        else if (roundStatistics.teamClutched(winner))
+            new DodgeboltTeamClutchedEvent(winner).callEvent();
+        else
+            new DodgeboltTeamWonBasicRoundEvent(winner).callEvent();
 
         // Now that we announced the results completely, we can update score and check for OT or end the game
         setState(DodgeboltGameState.INTERMISSION);
 
         // Give the winners a point
         winner.setScore(winner.getScore() + 1);
-        mainHoloScoreboard.update();
+        mainHoloScoreboard.update(useSessionScoreboard());
 
         // Win by 2 rule? if both teams are on match point
-        if (Dodgebolt.getPlugin(Dodgebolt.class).getConfig().getBoolean(ConfigManager.WIN_BY_2)) {
+        if (Dodgebolt.getInstance().getConfig().getBoolean(ConfigManager.WIN_BY_2)) {
             // If the teams scores are equal and the next point would be a game winner....
             if (team1.getScore() == team2.getScore() && getRoundsToWin() - 1 == team1.getScore()) {
                 broadcast(ChatColor.GRAY + "[" + ChatColor.DARK_RED + "!" + ChatColor.GRAY + "] " + ChatColor.RED + ChatColor.BOLD + "Overtime! " + ChatColor.YELLOW + "Another two rounds will be played!");
@@ -487,7 +464,6 @@ public class DodgeboltGame implements Listener {
 
         // Set players to psuedogod mode and clear their inventories
         for (Player player : getAllPlayersInStadium()) {
-
             player.setGlowing(false);
             player.stopSound(Sound.MUSIC_DISC_PIGSTEP);
         }
@@ -552,13 +528,16 @@ public class DodgeboltGame implements Listener {
 
     public void endGame(boolean byForce) {
 
-        // Tell everyone the results
-        announceMatchResults();
+        for (Player p : getAllPlayersOnTeams())
+            Items.clearDodgeboltItems(p);
 
         if (byForce)
             teleportPlayersToOriginAndReset();
         else
             teleportPlayersToOriginAndResetLater();
+
+        // Tell everyone the results
+        announceMatchResults();
 
     }
 
@@ -569,6 +548,7 @@ public class DodgeboltGame implements Listener {
                 player.spigot().respawn();
 
             player.setGlowing(false);
+            player.setFireTicks(0);
 
             Location loc = stadium.getSpawn().add(Math.random()*5 + 5.5, 0, Math.random()*5 - 2.5);
             player.teleport(loc);
@@ -615,14 +595,18 @@ public class DodgeboltGame implements Listener {
         for (Player winningPlayer : winner.getMembersAsPlayers()) {
             winningPlayer.playSound(winningPlayer.getEyeLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, .75f, 1);
             winningPlayer.sendTitle(ChatColor.GREEN + "VICTORY", winner.getTeamColor() + winner.getName() + ChatColor.GRAY + " won the game!", 10, 80, 40);
-            PlayerStats.addStatistic(winningPlayer, PlayerStats.PLAYER_WINS);
-            Items.equipWinnerCrown(winningPlayer, Material.GOLDEN_HELMET, ChatColor.YELLOW + "Winner's Crown", String.format("%swinning %sa match %s%s %s- %s%s%s!", ChatColor.GREEN, ChatColor.GRAY, winner.getTeamColor(), winner.getScore(), ChatColor.GRAY, getOpposingTeam(winner).getTeamColor(), getOpposingTeam(winner).getScore(), ChatColor.GRAY));
+            Items.equipWinnerCrown(winningPlayer, winner, Material.GOLDEN_HELMET, ChatColor.YELLOW + "Winner's Crown", String.format("%swinning %sa match %s%s %s- %s%s%s!", ChatColor.GREEN, ChatColor.GRAY, winner.getTeamColor(), winner.getScore(), ChatColor.GRAY, getOpposingTeam(winner).getTeamColor(), getOpposingTeam(winner).getScore(), ChatColor.GRAY));
+            new PlayerObtainedCrownEvent(winningPlayer, PlayerObtainedCrownEvent.CrownType.MATCH_WIN).callEvent();
         }
 
         // Give the MVP an mvp crown
-        Player matchMVP = mainHoloScoreboard.getMVP().getPlayer();
-        PlayerStats.addStatistic(matchMVP, PlayerStats.MATCH_MVPS);
-        Items.equipWinnerCrown(matchMVP, Material.DIAMOND_HELMET, ChatColor.AQUA + "Match MVP Crown", "achieving " + ChatColor.GOLD + "Match MVP" + ChatColor.GRAY + " in a Dodgebolt game!");
+        Player matchMVP = Bukkit.getPlayer(gameStatisticsManager.getMatchMVP().getOwner());
+
+        if (matchMVP != null) {
+            Team mvpTeam = getPlayerTeam(matchMVP);
+            Items.equipWinnerCrown(matchMVP, mvpTeam, Material.DIAMOND_HELMET, ChatColor.AQUA + "Match MVP Crown", "achieving " + ChatColor.GOLD + "Match MVP" + ChatColor.GRAY + " in a Dodgebolt game!");
+            new PlayerObtainedCrownEvent(matchMVP, PlayerObtainedCrownEvent.CrownType.MATCH_MVP).callEvent();
+        }
 
         // Loop through the losers and tell them they lost
         for (Player losingPlayer : getOpposingTeam(winner).getMembersAsPlayers()) {
@@ -639,6 +623,7 @@ public class DodgeboltGame implements Listener {
             spectator.sendTitle(ChatColor.AQUA + "GAME OVER", winner.getTeamColor() + winner.getName() + ChatColor.GRAY + " won the game!", 10, 80, 40);
         }
 
+        new GameEndedEvent(this).callEvent();
 
     }
 
@@ -665,7 +650,7 @@ public class DodgeboltGame implements Listener {
             scoreboardManager.hideMinecraftScoreboardAttributes(p);
 
         // Delete the hologram scoreboard
-        mainHoloScoreboard.hide();
+        mainHoloScoreboard.delete();
 
         inventoryStower.restoreAll();
 
@@ -678,6 +663,7 @@ public class DodgeboltGame implements Listener {
     private void playerWalkedInStadium(Player player) {
 
         inventoryStower.storeInventory(player);
+        player.setGameMode(GameMode.SURVIVAL);
 
         scoreboardManager.showMinecraftScoreboardAttributes(player);
 
@@ -686,10 +672,13 @@ public class DodgeboltGame implements Listener {
 
         player.showTitle(Title.title(Component.text("Dodgebolt Arena", NamedTextColor.AQUA), Component.text("Interact with the signs to play!", NamedTextColor.GRAY)));
         player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_WORK_FLETCHER, 1f, 1f);
+
+        Dodgebolt.getInstance().getServer().getPluginManager().callEvent(new PlayerEnterStadiumEvent(this, player));
     }
 
     private void playerWalkedOutStadium(Player player) {
 
+        Items.clearDodgeboltItems(player);
         inventoryStower.restoreInventory(player);
 
         scoreboardManager.hideMinecraftScoreboardAttributes(player);
@@ -707,6 +696,8 @@ public class DodgeboltGame implements Listener {
 
         // Stop playing the 1v1 music
         player.stopSound(Sound.MUSIC_DISC_PIGSTEP);
+
+        Dodgebolt.getInstance().getServer().getPluginManager().callEvent(new PlayerLeaveStadiumEvent(this, player));
     }
 
     public void enterExitStadiumCheck(Player player, Location from, Location to) {
@@ -793,54 +784,61 @@ public class DodgeboltGame implements Listener {
     }
 
     public void handleIngameDeath(Player player, boolean wasQuit) {
-        Team team = getPlayerTeam(player);
-        if (team == null || state != DodgeboltGameState.INGAME)
+
+        // Not on a team or game not running? Ignore
+        Team deadPlayersTeam = getPlayerTeam(player);
+        if (deadPlayersTeam == null || state != DodgeboltGameState.INGAME)
             return;
 
-        boolean newDeath = team.getElimTracker().teamMemberDied(player);
+        // Somehow died a second time? Ignore
+        boolean newDeath = deadPlayersTeam.getElimTracker().teamMemberDied(player);
         if (!newDeath)
             return;
 
-        Player killer = player.getKiller();
-        if (killer != null && getPlayerTeam(killer) != team)
-            PlayerStats.addStatistic(killer, PlayerStats.PLAYER_KILLS);
-        PlayerStats.addStatistic(player, PlayerStats.PLAYER_DEATHS);
+        // Make an event to announce that this player died
+        new DodgeboltPlayerEliminatedEvent(player).callEvent();
+        // Update the scoreboard
+        mainHoloScoreboard.update(useSessionScoreboard());
 
-        // Keep track for game stats, if killer is null its a suicide so player killed player otherwise killer is killer
-        gameStatisticsManager.registerKill(killer == null || getPlayerTeam(killer) != null ? player : killer, player);
-        mainHoloScoreboard.update();
-
+        // Announce to the stadium that this person died
         for (Player otherPlayers : getAllPlayersInStadium()) {
 
             if (team1.getElimTracker().getTeamMembersAlive() == 1 && team2.getElimTracker().getTeamMembersAlive() == 1)
                 playPigstep();
 
-            if (otherPlayers == killer)
-                otherPlayers.sendTitle(getBothTeamAliveCountString(),ChatColor.GRAY + "[" + ChatColor.RED + "✘" + ChatColor.GRAY + "] " + player.getDisplayName(), 5, 15, 5);
+            if (otherPlayers == player.getKiller())
+                otherPlayers.sendTitle(getBothTeamAliveCountString(),ChatColor.GRAY + "[" + ChatColor.RED + "✘" + ChatColor.GRAY + "] " + deadPlayersTeam.getCleanMemberString(player), 5, 15, 5);
             else
                 otherPlayers.sendTitle(getBothTeamAliveCountString(), "", 5, 15, 5);
 
             Team otherPlayersTeam = getPlayerTeam(otherPlayers);
-            if (otherPlayersTeam == null || getOpposingTeam(otherPlayersTeam) == team)
+            if (otherPlayersTeam == null || getOpposingTeam(otherPlayersTeam) == deadPlayersTeam)
                 otherPlayers.playSound(otherPlayers.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
             else
                 otherPlayers.playSound(otherPlayers.getLocation(), Sound.ENTITY_ENDERMAN_HURT, 1, .8f);
 
         }
 
-        if (wasQuit)
-            globalBroadcast(ChatColor.GRAY + "[" + ChatColor.RED + "✘" + ChatColor.GRAY + "] " + Phrases.getRandomSuicidePhrase(player));
-        else if (killer != null && killer != player && getPlayerTeam(player) == getPlayerTeam(killer))
-            globalBroadcast(ChatColor.GRAY + "[" + ChatColor.RED + "✘" + ChatColor.GRAY + "] " + Phrases.getRandomTeamKillPhrase(player, killer));
-        else
-            globalBroadcast(ChatColor.GRAY + "[" + ChatColor.RED + "✘" + ChatColor.GRAY + "] " + (killer != null ? Phrases.getRandomKilledPhrase(player, killer) : Phrases.getRandomSuicidePhrase(player)));
+        // Send a kill message in chat since we turned it off
 
-        if (team.getElimTracker().teamIsDead())
-            exitGameRoundPhase(getOpposingTeam(team));
+        // If they quit, had no killer, or were their own killer it was a suicide
+        // If the killer was on the same team, it was a teamkill
+        // If the killer was any other scenario, normal kill message
+        if (wasQuit || player.getKiller() == null || player == player.getKiller())
+            globalBroadcast(ChatColor.GRAY + "[" + ChatColor.RED + "✘" + ChatColor.GRAY + "] " + Phrases.getRandomSuicidePhrase(player));
+        else if (player.getKiller() != null && player.getKiller() != player && getPlayerTeam(player) == getPlayerTeam(player.getKiller()))
+            globalBroadcast(ChatColor.GRAY + "[" + ChatColor.RED + "✘" + ChatColor.GRAY + "] " + Phrases.getRandomTeamKillPhrase(player, player.getKiller()));
+        else
+            globalBroadcast(ChatColor.GRAY + "[" + ChatColor.RED + "✘" + ChatColor.GRAY + "] " + (player.getKiller() != null ? Phrases.getRandomKilledPhrase(player, player.getKiller()) : Phrases.getRandomSuicidePhrase(player)));
+
+        // If a team is completely dead, then end the round, otherwise shrink the arena
+        if (deadPlayersTeam.getElimTracker().teamIsDead())
+            exitGameRoundPhase(getOpposingTeam(deadPlayersTeam));
         else
             stadium.getArena().shrinkArena();
 
-        Fireworks.spawnFireworksInstantly(player.getLocation(), ColorTranslator.translateChatColorToColor(team.getTeamColor()));
+        // Pretty kill fx
+        Fireworks.spawnFireworksInstantly(player.getLocation(), ColorTranslator.translateChatColorToColor(deadPlayersTeam.getTeamColor()));
     }
 
     private void playPigstep() {
@@ -849,9 +847,14 @@ public class DodgeboltGame implements Listener {
             return;
 
         for (Player p : getAllPlayersInStadium())
-            p.playSound(p.getEyeLocation().add(0, 60, 0), Sound.MUSIC_DISC_PIGSTEP, .75f, 1);
+            p.playSound(p.getEyeLocation().add(0, 100, 0), Sound.MUSIC_DISC_PIGSTEP, 1.5f, 1);
     }
 
+    /**
+     * Handle prevention of crossing sides and taking/giving bow based on arena position
+     *
+     * @param event
+     */
     @EventHandler
     public void onPlayerMoveDuringGame(PlayerMoveEvent event) {
 
@@ -869,41 +872,101 @@ public class DodgeboltGame implements Listener {
         }
 
         // If the player is over the foul line take their bow away
-        if (event.getFrom().getBlock() != event.getTo().getBlock() && getStadium().getArena().outOfBowRange(event.getTo()) && !getStadium().getArena().outOfBowRange(event.getFrom()))
-            event.getPlayer().getInventory().setItem(0, Items.getInactiveBow());
+        boolean enteredFoulZone = event.getFrom().getBlock() != event.getTo().getBlock() && getStadium().getArena().outOfBowRange(event.getTo()) && !getStadium().getArena().outOfBowRange(event.getFrom());
+        boolean leftFoulZone = event.getFrom().getBlock() != event.getTo().getBlock() && getStadium().getArena().outOfBowRange(event.getFrom()) && !getStadium().getArena().outOfBowRange(event.getTo());
+        ItemStack bow = Items.getDodgeboltBow();
+        ItemStack clay = Items.getInactiveBow();
+
+        if (enteredFoulZone) {
+            for (ItemStack is : event.getPlayer().getInventory().getContents())
+                if (is != null && is.hasItemMeta() && is.getType().equals(bow.getType())) {
+                    is.setType(clay.getType());
+                    is.setItemMeta(clay.getItemMeta());
+                }
+        }
         // If the player went back into play give them the bow back
-        else if (event.getFrom().getBlock() != event.getTo().getBlock() && getStadium().getArena().outOfBowRange(event.getFrom()) && !getStadium().getArena().outOfBowRange(event.getTo()))
-            event.getPlayer().getInventory().setItem(0, Items.getDodgeboltBow());
+        else if (leftFoulZone) {
+            for (ItemStack is : event.getPlayer().getInventory().getContents())
+                if (is != null && is.hasItemMeta() && is.getType().equals(clay.getType())) {
+                    is.setType(bow.getType());
+                    is.setItemMeta(bow.getItemMeta());
+                }
+        }
     }
 
+    /**
+     * Handle prevention of natural health regeneration in the stadium
+     *
+     * @param event
+     */
     @EventHandler
-    public void onPlayerClickBowInInventory(InventoryClickEvent event) {
+    public void onRegenDuringGameAttempt(EntityRegainHealthEvent event) {
 
-        if (state == DodgeboltGameState.WAITING)
+        // If entity was not in arena don't care
+        if (!getStadium().getArena().isInArena(event.getEntity().getLocation()))
             return;
 
-        if (getPlayerTeam((Player) event.getWhoClicked()) == null)
+        // If the reason wasn't either peaceful regen or natural regen due to food we don't care
+        EntityRegainHealthEvent.RegainReason reason = event.getRegainReason();
+        if (!(reason.equals(EntityRegainHealthEvent.RegainReason.REGEN) || reason.equals(EntityRegainHealthEvent.RegainReason.SATIATED)))
             return;
 
-        // If the inventory slot is slot 0 don't let them do anything
-        if (event.getSlot() == 0)
-            event.setCancelled(true);
-
+        event.setCancelled(true);
     }
 
+    /**
+     * Handle prevention of picking up items that are not dodgebolt items in the stadium
+     *
+     * @param event
+     */
     @EventHandler
-    public void onPlayerAttemptOffhandSlotOne(PlayerSwapHandItemsEvent event) {
+    public void onPlayerAttemptPickupInStadium(PlayerAttemptPickupItemEvent event) {
 
-        if (state == DodgeboltGameState.WAITING)
+        // If player was not in stadium don't care
+        if (!getStadium().isInStadium(event.getPlayer().getLocation()))
             return;
 
-        if (getPlayerTeam(event.getPlayer()) == null)
+        if (event.getPlayer().isOp())
             return;
 
-        if (event.getPlayer().getInventory().getHeldItemSlot() == 0)
+        // At this point a player is attempting to pickup an item in the stadium, they cannot pickup items unless its from us
+        if (!Items.itemIsFromDodgebolt(event.getItem().getItemStack().getItemMeta()))
             event.setCancelled(true);
     }
 
+    /**
+     * Handle when a player attempts to open a chest in the stadium (don't let them)
+     *
+     * @param event
+     */
+    @EventHandler
+    public void onPlayerAttemptOpenChestInStadium(PlayerInteractEvent event) {
+        // If player was not in stadium don't care
+        if (!getStadium().isInStadium(event.getPlayer().getLocation()))
+            return;
+
+        // If this was a right click event on a chest, enderchest, shulker, hopper, cancel it
+        if (!event.getAction().equals(Action.RIGHT_CLICK_BLOCK))
+            return;
+
+        if (event.getClickedBlock() == null)
+            return;
+
+        if (event.getPlayer().isOp())
+            return;
+
+        if (Arrays.asList(Material.CHEST, Material.HOPPER, Material.SHULKER_BOX, Material.ENDER_CHEST).contains(event.getClickedBlock().getType())) {
+            event.setCancelled(true);
+            event.getPlayer().sendActionBar(Component.text("You cannot open storage here!", NamedTextColor.RED));
+        }
+
+    }
+
+    /**
+     * Handle when a player takes lava damage in the stadium
+     *
+     * @param event
+     */
     @EventHandler
     public void onPlayerTookLavaDamage(EntityDamageEvent event) {
 
@@ -918,6 +981,13 @@ public class DodgeboltGame implements Listener {
             event.setDamage(10000);
     }
 
+    /**
+     * Handle every instance of PVP that we should care about
+     * - Smacking each other no matter if we are in game or not
+     * - Shooting each other with bows
+     *
+     * @param event
+     */
     @EventHandler
     public void onPlayerPVP(EntityDamageByEntityEvent event) {
 
@@ -929,24 +999,64 @@ public class DodgeboltGame implements Listener {
         if (!stadium.isInStadium(event.getDamager().getLocation()))
             return;
 
-
-        // Don't do any damage no matter what the cause or source is
+        // Don't do any damage no matter what the cause or source is, we will override it
         event.setDamage(0);
 
+        // A mouthful but: If both entities are players, the dealer is op, and we are in lobby phase...
+        if (event.getDamager() instanceof Player && event.getEntity() instanceof Player && event.getDamager().isOp() && state == DodgeboltGameState.WAITING) {
+
+            // Sneaking to kick from team?
+            if (((Player) event.getDamager()).isSneaking()) {
+                setSpectating((Player) event.getEntity());
+            } else {
+                // Get op's team
+                Team opTeam = getPlayerTeam((Player) event.getDamager());
+
+                // If it exists infect the other player to their team
+                if (opTeam != null && getPlayerTeam((Player) event.getEntity()) != opTeam)
+                    setPlayerTeam((Player) event.getEntity(), opTeam);
+            }
+
+            return;
+
+
+        }
+
+        // If the thing being damaged is not a person ignore them
         if (!(event.getEntity() instanceof Player))
             return;
 
+        // If the thing doing damage is not an arrow ignore
         if (!(event.getDamager() instanceof Arrow))
             return;
 
+        // If the damage being dealt was not a projectile ignore
         if (event.getCause() != EntityDamageEvent.DamageCause.PROJECTILE)
             return;
 
+        // If the firer of the projectile did not come from a player cancel the event and ignore
+        if (!(((Arrow) event.getDamager()).getShooter() instanceof Player)) {
+            event.setCancelled(true);
+            return;
+        }
+
+        // At this point we should be contained in the stadium, and a player is getting shot by an arrow
+
+        //todo: FIGURE OUT WHY TF THIS GET CALLED SO MANY TIMES AND GIVES PLAYERS GIGA ACCURACY
+        Player shooter = (Player) ((Arrow) event.getDamager()).getShooter();
+
+        double damage = bowDamagePercent / 5.0;
+        new PlayerHitDodgeboltArrowEvent(shooter, (Player) event.getEntity(), damage).callEvent();
+
         // At this point an arrow is being shot we can override the damage
-        event.setDamage(EntityDamageEvent.DamageModifier.ARMOR, 0);
-        event.setDamage(EntityDamageEvent.DamageModifier.BASE, bowDamagePercent / 5.0);
+        event.setDamage(damage);
     }
 
+    /**
+     * Handle when a bow is shot during the game, set arrow color and announce this to the plugin
+     *
+     * @param event
+     */
     @EventHandler
     public void onBowShoot(EntityShootBowEvent event) {
 
@@ -954,64 +1064,65 @@ public class DodgeboltGame implements Listener {
         if (!stadium.isInStadium(event.getEntity().getLocation()))
             return;
 
-        if (state != DodgeboltGameState.INGAME)
-            return;
-
+        // If a player did not shoot this bow ignore
         if (!(event.getEntity() instanceof Player))
             return;
 
-        Team playersTeam = getPlayerTeam((Player) event.getEntity());
+        Player entity = (Player) event.getEntity();
+
+        // If this player was not on a team ignore
+        Team playersTeam = getPlayerTeam(entity);
         if (playersTeam == null)
             return;
 
+        // If this player was out of bow range don't let them shoot
+        if (getStadium().getArena().outOfBowRange(entity.getLocation())) {
+            event.setCancelled(true);
+            return;
+        }
+
+        // If we shot an arrow, set its color
         if (event.getProjectile() instanceof Arrow) {
             ((Arrow) event.getProjectile()).setColor(ColorTranslator.translateChatColorToColor(playersTeam.getTeamColor()));
             event.getProjectile().setGlowing(true);
         }
 
-        if (getStadium().getArena().outOfBowRange(event.getEntity().getLocation())) {
-            event.setCancelled(true);
-            return;
-        }
-
-        PlayerStats.addStatistic((Player) event.getEntity(), PlayerStats.ARROWS_FIRED);
-        gameStatisticsManager.registerArrowShot(((Player) event.getEntity()));
-        mainHoloScoreboard.update();
+        // Announce that we shot an arrow
+        new PlayerFiredDodgeboltArrowEvent((Player) event.getEntity()).callEvent();
+        mainHoloScoreboard.update(useSessionScoreboard());
     }
 
+    /**
+     * Handle the conversion process of when an arrow entity hits something, we need to spawn an arrow item stack
+     *
+     * @param event
+     */
     @EventHandler
-    public void onArrowHitPlayer(EntityDamageByEntityEvent event) {
+    public void onArrowCollide(ProjectileHitEvent event) {
 
-        // If this entity is not in the stadium then ignore them
-        if (!stadium.isInStadium(event.getEntity().getLocation()))
+        // If this projectile is not in the stadium then ignore them
+        if (!stadium.getArena().isInArena(event.getEntity().getLocation()))
             return;
 
-        // Specifically find when a player is hit by an arrow fired by another player
-        if (state != DodgeboltGameState.INGAME)
+        // Only care about arrows
+        if (!(event.getEntity() instanceof Arrow))
             return;
 
-        if (!(event.getEntity() instanceof Player))
-            return;
+        // Monkey fix for the ceiling
+        int yOffset = event.getHitBlockFace() == BlockFace.DOWN ? -1 : 0;
 
-        if (!(event.getDamager() instanceof Projectile))
-            return;
-
-        ProjectileSource src = ((Projectile) event.getDamager()).getShooter();
-
-        if (!(src instanceof Player))
-            return;
-
-        Player playerSrc = (Player) src;
-
-        if (getPlayerTeam(playerSrc) == null)
-            return;
-
-        gameStatisticsManager.registerArrowHit(playerSrc);
-        PlayerStats.addStatistic(playerSrc, PlayerStats.ARROWS_HIT);
-        mainHoloScoreboard.update();
-
+        Item item = event.getEntity().getWorld().dropItem(event.getEntity().getLocation().add(0, yOffset, 0), new ItemStack(Material.ARROW));
+        item.setGlowing(true);
+        item.setVelocity(event.getEntity().getVelocity().normalize().multiply(-.1));
+        Items.tagItemAsDodgeboltItem(item.getItemStack());
+        event.getEntity().remove();
     }
 
+    /**
+     * Handle changing the color of the entire stadium and arena
+     *
+     * @param event
+     */
     @EventHandler(priority = EventPriority.MONITOR)
     public void onTeamColorChange(TeamColorChangeEvent event) {
 
@@ -1026,6 +1137,11 @@ public class DodgeboltGame implements Listener {
         stadium.changeTeamColors(team1New, team2New);
     }
 
+    /**
+     * Handle preventing players breaking blocks in the stadium (unless they are op)
+     *
+     * @param event
+     */
     @EventHandler
     public void onBlockBreak(BlockBreakEvent event) {
 
@@ -1036,8 +1152,36 @@ public class DodgeboltGame implements Listener {
         // However, if this player is opped then they will always have control
         if (event.getPlayer().isOp())
             event.setCancelled(false);
+
+        if (event.isCancelled())
+            event.getPlayer().sendActionBar(Component.text("You cannot break blocks here!", NamedTextColor.RED));
     }
 
+    /**
+     * Handle preventing players placing blocks in the stadium (unless they are op)
+     *
+     * @param event
+     */
+    @EventHandler
+    public void onBlockPlace(BlockPlaceEvent event) {
+
+        // If either the block or the player is in the stadium, cancel the event
+        if (stadium.isInStadium(event.getBlock().getLocation()) || stadium.isInStadium(event.getPlayer().getLocation()))
+            event.setCancelled(true);
+
+        // However, if this player is opped then they will always have control
+        if (event.getPlayer().isOp())
+            event.setCancelled(false);
+
+        if (event.isCancelled())
+            event.getPlayer().sendActionBar(Component.text("You cannot place blocks here!", NamedTextColor.RED));
+    }
+
+    /**
+     * Handle prevention of arrows de spawning during a match
+     *
+     * @param event
+     */
     @EventHandler
     public void onArrowItemDespawnInStadium(ItemDespawnEvent event) {
 
@@ -1050,31 +1194,42 @@ public class DodgeboltGame implements Listener {
             event.setCancelled(true);
     }
 
+    /**
+     * Handle restricting players dropping items that are not arrows during a game
+     *
+     * @param event
+     */
     @EventHandler
     public void onPlayerAttemptDropItemIngame(PlayerDropItemEvent event) {
 
-        // If this entity is not in the stadium then ignore them
-        if (!stadium.isInStadium(event.getPlayer().getLocation()))
+        // If this entity is not in the arena then ignore them
+        if (!stadium.getArena().isInArena(event.getPlayer().getLocation()))
             return;
 
         // Don't let anything be dropped BESIDES arrows while the game is in progress
         if (isInProgress() && event.getItemDrop().getItemStack().getType() != Material.ARROW)
             event.setCancelled(true);
-        // An arrow was dropped mid game, make it glow
-        else if (state == DodgeboltGameState.INGAME)
-            event.getItemDrop().setGlowing(true);
     }
 
+    /**
+     * Handle making item entities (arrows only) glow when they are spawned within the arena
+     *
+     * @param event
+     */
     @EventHandler
-    public void onPlayerDroppedArrowFromDeath(ItemSpawnEvent event) {
+    public void onArrowItemSpawnInArena(ItemSpawnEvent event) {
 
-        // If this entity is not in the stadium then ignore them
-        if (!stadium.isInStadium(event.getEntity().getLocation()))
+        // If this entity is not in the arena then ignore them
+        if (!stadium.getArena().isInArena(event.getEntity().getLocation()))
             return;
 
+        Items.tagItemAsDodgeboltItem(event.getEntity());
+
         // If we are in game and an arrow was dropped, make it glow
-        if (state == DodgeboltGameState.INGAME && event.getEntity().getItemStack().getType() == Material.ARROW)
+        if (state == DodgeboltGameState.INGAME && event.getEntity().getItemStack().getType() == Material.ARROW) {
             event.getEntity().setGlowing(true);
+            Items.tagItemAsDodgeboltItem(event.getEntity().getItemStack());
+        }
     }
 
 }

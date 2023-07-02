@@ -69,18 +69,32 @@ public class Phrases {
     };
 
     public static String getRandomSuicidePhrase(Player player) {
+        Team pTeam = Dodgebolt.getInstance().getGame().getPlayerTeam(player);
+        String displayName = pTeam != null ? pTeam.getCleanMemberString(player) : ChatColor.WHITE + player.getName();
         String phrase = SUICIDE_PHRASES[(int) (Math.random() * SUICIDE_PHRASES.length)];
-        return String.format(phrase, player.getDisplayName());
+        return String.format(phrase, displayName);
     }
 
     public static String getRandomKilledPhrase(Player player, Player killer) {
+        Team pTeam = Dodgebolt.getInstance().getGame().getPlayerTeam(player);
+        Team kTeam = Dodgebolt.getInstance().getGame().getPlayerTeam(killer);
+
+        String pDisplayName = pTeam != null ? pTeam.getCleanMemberString(player) : ChatColor.WHITE + player.getName();
+        String kDisplayName = kTeam != null ? kTeam.getCleanMemberString(killer) : ChatColor.WHITE + killer.getName();
+
         String phrase = KILLED_PHRASES[(int) (Math.random() * KILLED_PHRASES.length)];
-        return String.format(phrase, killer.getDisplayName(), player.getDisplayName());
+        return String.format(phrase, kDisplayName, pDisplayName);
     }
 
     public static String getRandomTeamKillPhrase(Player player, Player killer) {
+
+        Team pTeam = Dodgebolt.getInstance().getGame().getPlayerTeam(player);
+
+        String pDisplayName = pTeam != null ? pTeam.getCleanMemberString(player) : ChatColor.WHITE + player.getName();
+        String kDisplayName = pTeam != null ? pTeam.getCleanMemberString(killer) : ChatColor.WHITE + killer.getName();
+
         String phrase = TEAMKILL_PHRASES[(int) (Math.random() * TEAMKILL_PHRASES.length)];
-        return String.format(phrase, killer.getDisplayName(), player.getDisplayName());
+        return String.format(phrase, kDisplayName, pDisplayName);
     }
 
 }

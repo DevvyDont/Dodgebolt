@@ -1,6 +1,7 @@
 package me.devvy.dodgebolt.commands;
 
 import me.devvy.dodgebolt.Dodgebolt;
+import me.devvy.dodgebolt.statistics.EventTracker;
 import me.devvy.dodgebolt.util.ConfigManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -19,8 +20,10 @@ import java.util.List;
 
 public class DodgeboltCommand implements CommandExecutor, TabCompleter {
 
-    public static final String[] OP_SUBCOMMANDS = {"setlocation", "reload"};
+    public static final String[] OP_SUBCOMMANDS = {"setlocation", "reload", "event", "eventstop", "clearsession"};
     public static final String[] NORMAL_SUBCOMMANDS = {};
+
+    private EventTracker eventTracker;
 
     @Override
     public boolean onCommand(@NotNull CommandSender commandSender, @NotNull Command command, @NotNull String s, @NotNull String[] strings) {
@@ -49,13 +52,54 @@ public class DodgeboltCommand implements CommandExecutor, TabCompleter {
             // Reloading? (OP command)
             if (sender.isOp() && cmd.equals("reload"))
                 return handleReload(sender);
+
+            // Leaderboard spawn? (OP command)
+            if (sender.isOp() && cmd.equals("event"))
+                return handleEvent(sender);
+
+            // Stop Leaderboard? (OP command)
+            if (sender.isOp() && cmd.equals("eventstop"))
+                return handleEventStop(sender);
+
+            // Clear session stats? (OP command)
+            if (sender.isOp() && cmd.equals("clearsession"))
+                return handleClearSession(sender);
+
+
         }
 
 
         return false;
     }
 
+    private boolean handleClearSession(Player sender) {
+        sender.sendMessage(Component.text("Cleared Dodgebolt session stats!", NamedTextColor.GREEN));
+        Dodgebolt.getInstance().getGame().getGameStatisticsManager().resetSessionStats();
+        return true;
+    }
 
+    private boolean handleEventStop(Player sender) {
+
+        if (eventTracker == null)
+            return true;
+
+        eventTracker.cleanup();
+        eventTracker = null;
+        sender.sendMessage("Disabled the event tracker");
+        return true;
+    }
+
+    private boolean handleEvent(Player sender) {
+
+        if (eventTracker != null)
+            return handleEventStop(sender);
+
+        eventTracker = new EventTracker();
+
+        sender.sendMessage("Enabled the event tracker");
+
+        return true;
+    }
 
 
     @Override

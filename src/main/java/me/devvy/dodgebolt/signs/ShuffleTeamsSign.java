@@ -23,7 +23,7 @@ public class ShuffleTeamsSign extends InteractableSign {
     @Override
     public void handlePunched(Player player) {
 
-        if (Dodgebolt.getPlugin(Dodgebolt.class).getConfig().getBoolean(ConfigManager.OP_CHANGE_SETTINGS) && !player.isOp()){
+        if (game.isOnlyAdminsCanEdit() && !player.isOp()){
             player.sendMessage(ChatColor.GRAY + "[" + ChatColor.DARK_RED + "!" + ChatColor.GRAY + "] " + ChatColor.RED + "You must be op to change settings!");
             return;
         }

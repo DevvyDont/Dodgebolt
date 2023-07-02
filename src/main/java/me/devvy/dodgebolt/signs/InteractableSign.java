@@ -94,8 +94,10 @@ public abstract class InteractableSign implements Listener {
         if (event.getClickedBlock() == null)
             return;
 
-        if (event.getClickedBlock().equals(location.getBlock()))
+        if (event.getClickedBlock().equals(location.getBlock())) {
+            event.setCancelled(true);
             handlePunched(event.getPlayer());
+        }
 
     }
 

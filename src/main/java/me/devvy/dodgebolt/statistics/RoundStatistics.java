@@ -1,4 +1,4 @@
-package me.devvy.dodgebolt.game;
+package me.devvy.dodgebolt.statistics;
 
 
 import me.devvy.dodgebolt.Dodgebolt;
@@ -13,15 +13,44 @@ import java.util.*;
  */
 public class RoundStatistics {
 
-    // How many kills players have this round (suicides/teamkills do not count)
-    Map<UUID, Integer> playerToKillsMap = new HashMap<>();
+    // Keeps track of all general stats for only this round
+    Map<UUID, PlayerMatchStatContainer> thisRoundStatContainer = new HashMap<>();
 
-    public void registerKill(Player killer, Player whoDied) {
+    // We also need to keep track of who has dealt damage to everyone so we can award assists properly
+    Map<UUID, Set<UUID>> receivedDamageFromMap = new HashMap<>();
 
-        if (killer.equals(whoDied) || Dodgebolt.getInstance().getGame().getPlayerTeam(killer) == Dodgebolt.getInstance().getGame().getPlayerTeam(whoDied))
-            return;
+    public PlayerMatchStatContainer getRoundPlayerStats(UUID player) {
 
-        playerToKillsMap.put(killer.getUniqueId(), playerToKillsMap.getOrDefault(killer.getUniqueId(), 0) + 1);
+        // Already exists, return it
+        if (thisRoundStatContainer.containsKey(player))
+            return thisRoundStatContainer.get(player);
+
+        // Create a new entry for the player and recursively call code above this
+        thisRoundStatContainer.put(player, new PlayerMatchStatContainer(player));
+        return getRoundPlayerStats(player);
+    }
+
+    /**
+     * Call to register a player being eligible for an assist
+     *
+     * @param damager
+     * @param victim
+     */
+    public void registerEligibleForAssist(Player damager, Player victim) {
+
+        // Ensure a list is present
+        receivedDamageFromMap.computeIfAbsent(victim.getUniqueId(), k -> new HashSet<>());
+        receivedDamageFromMap.get(victim.getUniqueId()).add(damager.getUniqueId());
+    }
+
+    /**
+     * Returns a list of players that contributed to a player's death
+     *
+     * @param victim
+     * @return
+     */
+    public Collection<UUID> getPlayersEligibleForAssist(Player victim) {
+        return receivedDamageFromMap.getOrDefault(victim.getUniqueId(), Collections.emptySet());
     }
 
     // Look for special cases where a player aced, returns null if it didn't happen
@@ -35,6 +64,7 @@ public class RoundStatistics {
 
         int killsRequiredForAce = opposingTeam.getMembers().size();
 
+
         // Loop through all players on the team, if any of them get kills == to opposition size they get the ace
         for (UUID id : winningTeam.getMembers()) {
 
@@ -42,7 +72,7 @@ public class RoundStatistics {
             if (player == null)
                 return null;
 
-            int kills = playerToKillsMap.getOrDefault(id, 0);
+            int kills = getRoundPlayerStats(player.getUniqueId()).getKills();
 
             // If they got a lot of kills then it's an ace
             if (kills >= killsRequiredForAce)
@@ -66,7 +96,7 @@ public class RoundStatistics {
         // Loop through all members and check for a kill
         for (UUID player : winningTeam.getMembers()) {
 
-            int kills = playerToKillsMap.getOrDefault(player, 0);
+            int kills = getRoundPlayerStats(player).getKills();
             if (kills <= 0)
                 aceSatisfied = false;
 
@@ -89,10 +119,19 @@ public class RoundStatistics {
     // Look for someone who won the round as last alive on a team size of at least 3
     public boolean teamClutched(Team winningTeam) {
 
-        if (winningTeam.getMembers().size() < 3)
+        // Opposing team needs at least 3 players and we need to be last alive
+        if (Dodgebolt.getInstance().getGame().getOpposingTeam(winningTeam).getMembers().size() < 3)
             return false;
 
         return winningTeam.getElimTracker().getTeamMembersAlive() == 1;
     }
 
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        for (UUID id : thisRoundStatContainer.keySet())
+            sb.append(String.format("%s - %sk\n", Bukkit.getPlayer(id).getName(), thisRoundStatContainer.get(id)));
+
+        return sb.toString();
+    }
 }

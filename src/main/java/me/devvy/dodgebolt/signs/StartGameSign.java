@@ -19,7 +19,7 @@ public class StartGameSign extends InteractableSign {
     @Override
     public void handlePunched(Player player) {
 
-        if (Dodgebolt.getPlugin(Dodgebolt.class).getConfig().getBoolean(ConfigManager.OP_START_GAME) && !player.isOp()){
+        if (game.isOnlyAdminsCanEdit() && !player.isOp()){
             player.sendMessage(ChatColor.GRAY + "[" + ChatColor.DARK_RED + "!" + ChatColor.GRAY + "] " + ChatColor.RED + "You must be op to start a game!");
             return;
         }

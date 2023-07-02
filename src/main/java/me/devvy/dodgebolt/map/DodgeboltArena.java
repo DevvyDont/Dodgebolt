@@ -15,16 +15,11 @@ import com.sk89q.worldedit.session.ClipboardHolder;
 import me.devvy.dodgebolt.Dodgebolt;
 import me.devvy.dodgebolt.util.ColorTranslator;
 import org.bukkit.ChatColor;
-import org.bukkit.Difficulty;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
-import org.bukkit.entity.Arrow;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.Item;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;

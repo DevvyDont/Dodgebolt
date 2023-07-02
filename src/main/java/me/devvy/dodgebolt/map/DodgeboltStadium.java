@@ -116,7 +116,7 @@ public class DodgeboltStadium {
                     if (b.getType() == Material.AIR)
                         continue;
 
-                    if (arena.isInArena(b.getLocation()))
+                    if (!isInStadium(b.getLocation()))
                         continue;
 
                     if (!ColorTranslator.isTeamBlock(b.getType()))

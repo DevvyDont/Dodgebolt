@@ -141,7 +141,11 @@ public class Team {
      * @return
      */
     public String getCleanMemberString(Player player) {
-        return teamColor + ChatColor.stripColor(player.getName());
+        return getCleanMemberString(player.getName());
+    }
+
+    public String getCleanMemberString(String name) {
+        return teamColor + ChatColor.stripColor(name);
     }
 
     /**
