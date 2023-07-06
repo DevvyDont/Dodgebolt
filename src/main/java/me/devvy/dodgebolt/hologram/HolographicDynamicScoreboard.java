@@ -74,7 +74,8 @@ public class HolographicDynamicScoreboard {
         newArmorStands.add(spawnArmorStand(String.format("%s%s%s %s%s- %s%s%s", t1color, ChatColor.BOLD, t1score, ChatColor.GRAY, ChatColor.BOLD, t2color, ChatColor.BOLD, t2score), -3));
 
         // Spawn an armor stand that displays scoreboard header
-        newArmorStands.add(spawnArmorStand(String.format("%-16s %18s", ChatColor.GRAY.toString() + ChatColor.BOLD + "Player", "Score / K / D / A / ACC"), -1));
+        // Space codes will be as follows: name:20 Score:5 K:2 D:2 A:2 ACC:3
+        newArmorStands.add(spawnArmorStand(String.format("%-20s %5s / %2s / %2s / %2s / %3s%%", ChatColor.GRAY.toString() + ChatColor.BOLD + "Player", "Score", "K", "D", "A", "ACC"), -1));
 
         // Now we have a sorted list of player stats, construct the new holograms
         for (int i = 0; i < matchStats.size(); i++) {
@@ -87,8 +88,8 @@ public class HolographicDynamicScoreboard {
                 pTeam = Dodgebolt.getInstance().getGame().getPlayerTeam(p);
 
             String displayname = pTeam != null ? pTeam.getCleanMemberString(entry.getName()) : ChatColor.DARK_GRAY + entry.getName();
-            String statString = String.format("%s / %s / %s / %s / %s%%", entry.calculateScore(), entry.getKills(), entry.getDeaths(), entry.getAssists(), entry.getAccuracy());
-            newArmorStands.add(spawnArmorStand(String.format("%-16s %24s", displayname, ChatColor.GRAY + statString), i));
+            displayname += ChatColor.GRAY;
+            newArmorStands.add(spawnArmorStand(String.format("%-20s %5s / %2s / %2s / %2s / %3s%%", displayname, entry.calculateScore(), entry.getKills(), entry.getDeaths(), entry.getAssists(), entry.getAccuracy()), i));
         }
 
         List<ArmorStand> oldArmorStands = entities;
